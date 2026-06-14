@@ -24,7 +24,11 @@ jobs:
       - run: flutter pub get
       - run: flutter build apk --release --no-tree-shake-icons
 
-      - uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: BrainGame-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          tag_name: v1.0.${{ github.run_number }}
+          name: BrainGame v1.0.${{ github.run_number }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
