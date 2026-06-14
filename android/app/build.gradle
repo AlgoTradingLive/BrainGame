@@ -18,6 +18,15 @@ android {
         jvmTarget = '17'
     }
 
+    signingConfigs {
+        release {
+            keyAlias System.getenv("KEY_ALIAS")
+            keyPassword System.getenv("KEY_PASSWORD")
+            storeFile file("braingame-release.jks")
+            storePassword System.getenv("STORE_PASSWORD")
+        }
+    }
+
     defaultConfig {
         applicationId "com.braingame.brain_game"
         minSdk 21
@@ -28,7 +37,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
         }
     }
 }

@@ -1,4 +1,4 @@
-name: Build APK
+name: Build AAB
 
 on:
   push:
@@ -22,13 +22,22 @@ jobs:
           channel: stable
 
       - run: flutter pub get
-      - run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/braingame-release.jks
+
+      - name: Build AAB
+        run: flutter build appbundle --release --no-tree-shake-icons
+        env:
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: BrainGame v1.0.${{ github.run_number }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/bundle/release/app-release.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
