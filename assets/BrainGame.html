@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CalcMind</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #010409; color: white; font-family: 'Poppins', sans-serif; overflow: hidden; height: 100vh; }
+
+        /* ===================== HOME SCREEN ===================== */
+        #home-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: radial-gradient(ellipse at 50% 0%, #0d1f3c 0%, #010409 70%);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 80px 20px 30px;
+            overflow-y: auto; overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .home-particles {
+            position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+        }
+        .particle {
+            position: absolute; border-radius: 50%;
+            animation: float-particle linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes float-particle {
+            from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10%  { opacity: 0.3; }
+            90%  { opacity: 0.3; }
+            to   { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+        }
+
+        .home-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.2rem; font-weight: 900;
+            background: linear-gradient(135deg, #00f3ff, #4f8ef7, #a855f7, #e8479e, #ff7a3d);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-align: center; margin-bottom: 6px;
+            filter: drop-shadow(0 0 20px rgba(0,243,255,0.4));
+            animation: titlePulse 3s ease-in-out infinite;
+        }
+        @keyframes titlePulse {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(0,243,255,0.4)); }
+            50%       { filter: drop-shadow(0 0 35px rgba(168,85,247,0.6)); }
+        }
+
+        .home-subtitle {
+            font-size: 11px; letter-spacing: 4px; color: #4a5568;
+            text-transform: uppercase; margin-bottom: 40px;
+        }
+
+        .game-cards-wrapper {
+            display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 340px;
+        }
+
+        .game-card {
+            position: relative; overflow: hidden;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px; padding: 22px 20px;
+            cursor: pointer; backdrop-filter: blur(12px);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .game-card:active { transform: scale(0.97); }
+
+        .game-card::before {
+            content: ''; position: absolute; inset: 0; border-radius: 20px;
+            background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.03) 100%);
+            pointer-events: none;
+        }
+        .game-card-glow {
+            position: absolute; inset: -1px; border-radius: 20px;
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .game-card:active .game-card-glow { opacity: 1; }
+
+        .card-math .game-card-glow  { background: linear-gradient(135deg, #00f3ff22, #a855f722); border: 1.5px solid #00f3ff; }
+        .card-snake .game-card-glow { background: linear-gradient(135deg, #39ff1422, #00f3ff22); border: 1.5px solid #39ff14; }
+        .card-spell .game-card-glow { background: linear-gradient(135deg, #f0b90b22, #a855f722); border: 1.5px solid #f0b90b; }
+        .card-match .game-card-glow { background: linear-gradient(135deg, #fb718522, #c084fc22); border: 1.5px solid #fb7185; }
+
+        .card-icon {
+            width: 58px; height: 58px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; flex-shrink: 0;
+        }
+        .card-math  .card-icon { background: linear-gradient(135deg, #0d2a4a, #1a1040); border: 1px solid #00f3ff44; }
+        .card-snake .card-icon { background: linear-gradient(135deg, #0d2a1a, #0a1a10); border: 1px solid #39ff1444; }
+        .card-spell .card-icon { background: linear-gradient(135deg, #2a1a00, #1a0a30); border: 1px solid #f0b90b44; }
+        .card-match .card-icon { background: linear-gradient(135deg, #2a0a1a, #1a0a2a); border: 1px solid #fb718544; }
+        .card-spell .card-title { color: #f0b90b; }
+        .card-spell .tag { background: rgba(240,185,11,0.1); color: #f0b90b; border: 1px solid #f0b90b33; }
+        .card-match .card-title { color: #fb7185; }
+        .card-match .tag { background: rgba(251,113,133,0.1); color: #fb7185; border: 1px solid #fb718533; }
+
+        .card-info { flex: 1; }
+        .card-title {
+            font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .card-math  .card-title { color: #00f3ff; }
+        .card-snake .card-title { color: #39ff14; }
+
+        .card-desc { font-size: 11px; color: #6b7280; line-height: 1.4; }
+
+        .card-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .tag {
+            font-size: 9px; padding: 2px 8px; border-radius: 20px;
+            font-weight: 600; letter-spacing: 0.5px;
+        }
+        .card-math  .tag { background: rgba(0,243,255,0.1); color: #00f3ff; border: 1px solid #00f3ff33; }
+        .card-snake .tag { background: rgba(57,255,20,0.1);  color: #39ff14; border: 1px solid #39ff1433; }
+
+        .card-arrow {
+            font-size: 20px; color: #374151; flex-shrink: 0;
+            transition: transform 0.2s, color 0.2s;
+        }
+        .game-card:active .card-arrow { transform: translateX(4px); color: #9ca3af; }
+
+        .home-footer {
+            margin-top: 30px; font-size: 10px; color: #374151;
+            letter-spacing: 2px; text-transform: uppercase;
+        }
+
+        /* ===================== AD BANNER ===================== */
+        .ad-banner {
+            position: fixed; left: 0; right: 0; z-index: 9000;
+            height: 50px; background: rgba(10,12,20,0.92);
+            border-top: 1px solid rgba(255,255,255,0.07);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+        /* Math game — header ~60px, so banner below it */
+        /* Memory game — same header */
+        /* Snake game — stats bar ~50px */
+        /* Placeholder text inside banner */
+
+        /* ===================== BACK BUTTON ===================== */
+        .back-btn {
+            position: fixed; top: 72px; left: 12px; z-index: 10000;
+            background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.15);
+            color: #9ca3af; padding: 8px 14px; border-radius: 10px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            backdrop-filter: blur(10px); display: none;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.2s;
+        }
+        .back-btn:active { background: rgba(255,255,255,0.1); color: white; }
+
+        /* ===================== GAME FRAMES ===================== */
+        #game1-container, #game2-container {
+            position: fixed; inset: 0; z-index: 5000; display: none;
+        }
+
+        /* ==================== GAME 1 STYLES ==================== */
+        :root { --neon-blue: #00f3ff; --neon-green: #39ff14; --neon-red: #ff3131; --gold: #ffd700; --bg: #020617; --neon-purple: #a855f7; }
+
+        #g1-wrap { width: 100%; height: 100%; background: var(--bg); overflow: hidden; position: relative; }
+
+        .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; background: var(--bg); text-align: center; padding: 20px; }
+        .header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-around; padding: 10px 5px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); z-index: 100; }
+        .stat-capsule { background: rgba(255,255,255,0.05); border: 1.5px solid var(--neon-blue); padding: 6px 13px; border-radius: 50px; font-weight: bold; font-size: 13px; color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
+        #pot-container { position: absolute; width: 110px; height: 130px; left: 50%; transform: translateX(-50%); z-index: 10; }
+        #glass-pot { width: 100%; height: 100%; position: relative; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 10px 10px 40px 40px; overflow: hidden; backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; font-size: 38px; font-weight: bold; }
+        .water-wave { position: absolute; bottom: 0; width: 220%; height: 100%; background: rgba(0, 243, 255, 0.5); border-radius: 42%; animation: wave-flow 5s infinite linear; left: -60%; transition: top 0.3s linear; }
+        @keyframes wave-flow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #timer-box { position: absolute; right: 20px; top: 120px; font-size: 26px; color: var(--neon-red); font-weight: bold; text-shadow: 0 0 15px var(--neon-red); }
+        .btn-neon { background: transparent; border: 2px solid var(--neon-blue); color: var(--neon-blue); padding: 15px 30px; border-radius: 15px; font-weight: bold; font-size: 16px; margin: 10px; cursor: pointer; width: 280px; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); display: flex; flex-direction: column; align-items: center; }
+        .btn-neon small { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        .btn-neon:active { background: var(--neon-blue); color: #000; }
+        #button-grid { position: fixed; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 14px 14px; width: 100%; box-sizing: border-box; background: rgba(2,6,23,0.85); border-top: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px); }
+        .ans-btn { background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 18px; font-size: 28px; border-radius: 14px; backdrop-filter: blur(12px); transition: all 0.3s; font-weight: 800; }
+        .correct-neon { background: var(--neon-green) !important; color: black; box-shadow: 0 0 40px var(--neon-green); }
+        .wrong-neon { background: var(--neon-red) !important; color: white; box-shadow: 0 0 40px var(--neon-red); }
+        .cheque { background: #f8fafc; color: #1e293b; padding: 20px; border-radius: 8px; width: 320px; border: 2px solid #cbd5e1; font-family: 'Courier New', monospace; margin: 20px 0; box-shadow: 0 15px 40px rgba(0,0,0,0.6); }
+
+        /* ==================== GAME 2 STYLES ==================== */
+        #g2-wrap { width: 100%; height: 100%; background: #010409; overflow: hidden; position: relative; touch-action: none; }
+        #aquarium { position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, #0c1e33 0%, #010409 100%); z-index: 1; overflow: hidden; }
+        #gameCanvas { display: block; position: absolute; z-index: 5; background: transparent; }
+        #ui { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around; z-index: 10; pointer-events: none; }
+        .stat-box { padding: 8px 12px; border-radius: 12px; color: white; font-weight: 600; font-family: 'Orbitron', monospace; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; min-width: 80px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); font-size: 12px; }
+        #math-display { position: absolute; top: 108px; width: 100%; text-align: center; z-index: 10; display: none; }
+        .question-container { display: inline-block; padding: 20px 30px; background: rgba(0, 0, 0, 0.85); border-radius: 24px; border: 1px solid rgba(57, 255, 20, 0.5); box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); }
+        .q-text { font-size: 34px; color: #fff; font-weight: 700; font-family: 'Orbitron', monospace; }
+        .timer-box { color: #ff073a; text-shadow: 0 0 8px #ff073a, 0 0 15px #ff073a; font-size: 18px; font-weight: 700; margin-top: 12px; background: #000; border: 1px solid #ff073a; border-radius: 8px; padding: 5px 15px; display: inline-block; font-family: 'Orbitron', monospace; }
+        .modal { position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; text-align: center; }
+        .modal-content { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(20px); padding: 40px; border-radius: 30px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); max-width: 85%; }
+        .mode-btn { margin: 12px; padding: 16px 30px; font-size: 16px; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; cursor: pointer; color: white; width: 240px; transition: all 0.3s ease; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+        .easy-btn:active { border-color: #39ff14; color: #39ff14; }
+        .normal-btn:active { border-color: #ffeb3b; color: #ffeb3b; }
+        .hard-btn:active { border-color: #ff3131; color: #ff3131; }
+        button.start-btn { margin-top: 25px; padding: 14px 40px; font-size: 18px; font-weight: 700; background: #fff; border: none; border-radius: 12px; cursor: pointer; color: #000; transition: 0.3s; font-family: 'Poppins', sans-serif; }
+
+        /* ===================== COINS & WALLET SYSTEM ===================== */
+        #coins-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+            background: linear-gradient(90deg,#0a0f1a,#0d1f3c,#0a0f1a);
+            border-bottom: 1px solid rgba(240,185,11,0.3);
+            padding: 7px 14px; display: flex; align-items: center;
+            justify-content: space-between; backdrop-filter: blur(10px);
+        }
+        .coins-left { display: flex; align-items: center; gap: 8px; }
+        .coin-icon { font-size: 18px; animation: coinSpin 3s linear infinite; }
+        @keyframes coinSpin { 0%,100%{transform:rotateY(0deg)} 50%{transform:rotateY(180deg)} }
+        .coins-amount { font-family:'Orbitron',monospace; font-size:15px; font-weight:700; color:#f0b90b; text-shadow:0 0 10px rgba(240,185,11,0.5); }
+        .coins-label { font-size:8px; color:#6b7280; letter-spacing:1px; }
+        .wallet-btn { background:linear-gradient(135deg,#f0b90b,#ff8c00); color:#000; border:none; padding:6px 13px; border-radius:20px; font-size:11px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; box-shadow:0 0 12px rgba(240,185,11,0.3); }
+
+        #daily-bar-wrap {
+            position: fixed; top: 38px; left: 0; right: 0; z-index: 99998;
+            background: rgba(10,15,26,0.96); padding: 4px 14px;
+            display: flex; align-items: center; gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .daily-label { font-size:9px; color:#6b7280; white-space:nowrap; }
+        .progress-track { flex:1; height:5px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; }
+        .progress-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,#f0b90b,#39ff14); transition:width 0.5s ease; box-shadow:0 0 8px rgba(240,185,11,0.5); }
+        .daily-val { font-size:9px; color:#f0b90b; font-weight:700; white-space:nowrap; }
+
+        #coin-toast {
+            position:fixed; top:80px; left:50%; transform:translateX(-50%);
+            z-index:999999; pointer-events:none;
+            background:rgba(10,15,26,0.97); border:1px solid #f0b90b;
+            border-radius:30px; padding:7px 18px;
+            font-family:'Orbitron',monospace; font-size:13px; font-weight:700; color:#f0b90b;
+            display:none; white-space:nowrap; box-shadow:0 0 20px rgba(240,185,11,0.4);
+        }
+        @keyframes toastAnim {
+            0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(0.9)}
+            20%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.05)}
+            70%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+            100%{opacity:0;transform:translateX(-50%) translateY(-15px) scale(0.95)}
+        }
+
+        .watch-ad-btn {
+            position:fixed; bottom:190px; right:12px; z-index:9999;
+            background:linear-gradient(135deg,#f0b90b,#ff8c00); color:#000;
+            border:none; border-radius:14px; padding:10px 13px;
+            font-size:10px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif;
+            box-shadow:0 4px 15px rgba(240,185,11,0.4); display:none; text-align:center; line-height:1.4;
+            animation:adPulse 2s ease-in-out infinite;
+        }
+        @keyframes adPulse { 0%,100%{box-shadow:0 4px 15px rgba(240,185,11,0.4)} 50%{box-shadow:0 4px 25px rgba(240,185,11,0.7)} }
+
+        /* WALLET SCREEN */
+        #wallet-screen {
+            position:fixed; inset:0; z-index:999999;
+            background:#010409; display:none; flex-direction:column;
+            font-family:'Poppins',sans-serif; overflow-y:auto;
+        }
+        .wallet-header {
+            background:linear-gradient(135deg,#0d1f3c,#1a0a3c);
+            padding:50px 20px 28px; text-align:center;
+            border-bottom:1px solid rgba(240,185,11,0.2); position:relative;
+        }
+        .wallet-close { position:absolute; top:14px; left:14px; background:rgba(255,255,255,0.08); border:none; color:#9ca3af; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer; }
+        .wallet-coin-big { font-size:48px; margin-bottom:4px; }
+        .wallet-coins-num { font-family:'Orbitron',monospace; font-size:34px; font-weight:900; color:#f0b90b; text-shadow:0 0 20px rgba(240,185,11,0.6); }
+        .wallet-coins-sub { font-size:10px; color:#6b7280; margin-top:4px; letter-spacing:2px; }
+
+        .wallet-prog-box { margin:18px 16px 0; background:rgba(255,255,255,0.04); border:1px solid rgba(240,185,11,0.2); border-radius:16px; padding:16px; }
+        .wp-title { font-size:10px; color:#9ca3af; letter-spacing:1px; margin-bottom:10px; }
+        .wp-track { height:10px; background:rgba(255,255,255,0.08); border-radius:5px; overflow:hidden; margin-bottom:8px; }
+        .wp-fill { height:100%; border-radius:5px; background:linear-gradient(90deg,#f0b90b,#39ff14); box-shadow:0 0 10px rgba(240,185,11,0.5); transition:width 0.8s ease; }
+        .wp-labels { display:flex; justify-content:space-between; font-size:10px; color:#6b7280; }
+        .wp-labels span:last-child { color:#f0b90b; font-weight:700; }
+
+        .wstats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 16px 0; }
+        .wstat { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px; text-align:center; }
+        .wstat-val { font-family:'Orbitron',monospace; font-size:18px; font-weight:700; color:#fff; margin-bottom:4px; }
+        .wstat-label { font-size:9px; color:#6b7280; letter-spacing:1px; }
+
+        .earn-section { margin:14px 16px 0; }
+        .earn-title { font-size:10px; color:#9ca3af; letter-spacing:2px; text-transform:uppercase; margin-bottom:10px; }
+        .earn-item { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:11px; margin-bottom:8px; }
+        .earn-icon { font-size:22px; flex-shrink:0; }
+        .earn-info { flex:1; }
+        .earn-name { font-size:12px; font-weight:600; color:#fff; }
+        .earn-desc { font-size:10px; color:#6b7280; margin-top:2px; }
+        .earn-coins { font-family:'Orbitron',monospace; font-size:13px; font-weight:700; color:#f0b90b; }
+
+        .redeem-box { margin:14px 16px 20px; background:rgba(255,255,255,0.04); border:1px solid rgba(57,255,20,0.2); border-radius:16px; padding:16px; text-align:center; }
+        .redeem-title { font-size:13px; font-weight:700; color:#39ff14; margin-bottom:6px; }
+        .redeem-desc { font-size:11px; color:#6b7280; margin-bottom:12px; line-height:1.5; }
+        .redeem-num { font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:#fff; margin-bottom:4px; }
+        .redeem-num span { color:#f0b90b; }
+        .redeem-btn { width:100%; padding:14px; border-radius:12px; border:none; font-size:14px; font-weight:700; font-family:'Poppins',sans-serif; cursor:pointer; margin-top:10px; }
+        .redeem-btn.active { background:linear-gradient(135deg,#39ff14,#00f3ff); color:#000; box-shadow:0 0 20px rgba(57,255,20,0.4); }
+        .redeem-btn.locked { background:rgba(255,255,255,0.06); color:#4b5563; border:1px solid rgba(255,255,255,0.08); }
+
+        /* REDEEM FORM */
+        #redeem-form { position:fixed; inset:0; z-index:9999999; background:#010409; display:none; flex-direction:column; align-items:center; justify-content:center; padding:30px 20px; font-family:'Poppins',sans-serif; }
+        .rf-title { font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:#39ff14; margin-bottom:6px; text-align:center; }
+        .rf-sub { font-size:11px; color:#6b7280; margin-bottom:24px; text-align:center; }
+        .rf-input { width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:13px 15px; border-radius:12px; font-size:14px; font-family:'Poppins',sans-serif; margin-bottom:11px; outline:none; }
+        .rf-input:focus { border-color:#f0b90b; }
+        .rf-note { font-size:10px; color:#6b7280; text-align:center; line-height:1.6; margin-bottom:18px; }
+        .rf-submit { width:100%; padding:15px; background:linear-gradient(135deg,#39ff14,#00f3ff); color:#000; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; }
+        .rf-cancel { margin-top:12px; background:none; border:none; color:#6b7280; font-size:13px; cursor:pointer; font-family:'Poppins',sans-serif; }
+
+        /* Daily limit block overlay */
+        #daily-limit-screen {
+            position:fixed; inset:0; z-index:888888; background:rgba(0,0,0,0.92);
+            display:none; flex-direction:column; align-items:center; justify-content:center;
+            font-family:'Poppins',sans-serif; text-align:center; padding:30px;
+        }
+        .dl-icon { font-size:60px; margin-bottom:16px; }
+        .dl-title { font-family:'Orbitron',monospace; font-size:20px; font-weight:900; color:#f0b90b; margin-bottom:10px; }
+        .dl-msg { font-size:13px; color:#9ca3af; line-height:1.6; margin-bottom:24px; }
+        .dl-timer { font-family:'Orbitron',monospace; font-size:28px; font-weight:700; color:#fff; margin-bottom:20px; }
+        .dl-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:12px 28px; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Poppins',sans-serif; }
+        /* Coins bar & daily bar hidden during game — only home screen वर दिसेल */
+        #coins-bar, #daily-bar-wrap {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        body.in-game #coins-bar { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+        body.in-game #daily-bar-wrap { transform: translateY(-200%); opacity: 0; pointer-events: none; }
+
+        /* Game header — original position restore */
+        .header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-around; padding: 10px 5px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); z-index: 100; }
+
+        /* Watch Ad button — game मध्ये position */
+        .watch-ad-btn { bottom: 190px; }
+            0%   { opacity: 1; filter: blur(0px) brightness(1); transform: scale(1); }
+            40%  { opacity: 0.9; filter: blur(0px) brightness(1.3); transform: scale(1.05); }
+            100% { opacity: 0; filter: blur(18px) brightness(2); transform: scale(1.15); }
+        }
+        
+    </style>
+</head>
+<body>
+
+<!-- ============ COINS BAR ============ -->
+<div id="coins-bar">
+    <div class="coins-left">
+        <span class="coin-icon">🪙</span>
+        <div>
+            <div class="coins-amount"><span id="cb-coins">0</span></div>
+            <div class="coins-label">COINS</div>
+        </div>
+    </div>
+    <button class="wallet-btn" onclick="openWallet()">💰 WALLET</button>
+</div>
+
+<!-- Daily Progress Bar -->
+<div id="daily-bar-wrap">
+    <span class="daily-label">Today: </span>
+    <div class="progress-track"><div class="progress-fill" id="daily-fill" style="width:0%"></div></div>
+    <span class="daily-val" id="daily-val">0 / 500</span>
+</div>
+
+<!-- Toast -->
+<div id="coin-toast">🪙 +0</div>
+
+<!-- Watch Ad Button -->
+<button class="watch-ad-btn" id="watch-ad-btn" onclick="watchVideoAd()">▶ Watch Video<br>+50 🪙</button>
+
+<!-- ============ WALLET SCREEN ============ -->
+<div id="wallet-screen">
+    <div class="wallet-header">
+        <button class="wallet-close" onclick="closeWallet()">✕</button>
+        <div class="wallet-coin-big">🪙</div>
+        <div class="wallet-coins-num" id="w-total">0</div>
+        <div class="wallet-coins-sub">TOTAL COINS</div>
+    </div>
+    <div class="wallet-prog-box">
+        <div class="wp-title">🎯 ₹150 GOOGLE PLAY VOUCHER PROGRESS</div>
+        <div class="wp-track"><div class="wp-fill" id="wp-fill" style="width:0%"></div></div>
+        <div class="wp-labels"><span id="wp-coins">0 coins</span><span>15,000 = ₹150 Voucher 🎁</span></div>
+    </div>
+    <div class="wstats">
+        <div class="wstat"><div class="wstat-val" id="w-today">0</div><div class="wstat-label">TODAY EARNED</div></div>
+        <div class="wstat"><div class="wstat-val" id="w-left">500</div><div class="wstat-label">TODAY LEFT</div></div>
+        <div class="wstat"><div class="wstat-val" id="w-streak">0</div><div class="wstat-label">DAY STREAK 🔥</div></div>
+        <div class="wstat"><div class="wstat-val" id="w-redeemed">0</div><div class="wstat-label">REDEEMED</div></div>
+    </div>
+    <div class="earn-section">
+        <div class="earn-title">⚡ HOW TO EARN COINS</div>
+        <div class="earn-item"><span class="earn-icon">🎮</span><div class="earn-info"><div class="earn-name">Play Math Booster</div><div class="earn-desc">Correct answer → Earn coins</div></div><div class="earn-coins">+1 🪙</div></div>
+        <div class="earn-item"><span class="earn-icon">🐍</span><div class="earn-info"><div class="earn-name">Play Snake Math</div><div class="earn-desc">Collect correct answers</div></div><div class="earn-coins">+2 🪙</div></div>
+        <div class="earn-item"><span class="earn-icon">🧠</span><div class="earn-info"><div class="earn-name">Memory Test</div><div class="earn-desc">Remember pattern correctly</div></div><div class="earn-coins">+5 🪙</div></div>
+        <div class="earn-item"><span class="earn-icon">▶️</span><div class="earn-info"><div class="earn-name">Watch Video (Bonus)</div><div class="earn-desc">Watch short video completely — Best way to earn!</div></div><div class="earn-coins">+50 🪙</div></div>
+        <div class="earn-item"><span class="earn-icon">📅</span><div class="earn-info"><div class="earn-name">Daily Login</div><div class="earn-desc">Open app every day</div></div><div class="earn-coins">+10 🪙</div></div>
+    </div>
+    <div class="redeem-box">
+        <div class="redeem-title">🎁 Redeem Google Play Voucher</div>
+        <div class="redeem-desc">Collect 15,000 coins and get<br><b style="color:#fff">₹150 Google Play Voucher</b> FREE!<br><span style="font-size:9px;color:#4b5563">* Voucher delivered within 48 hours</span></div>
+        <div class="redeem-num"><span id="w-redeem-coins">0</span> / <span>15,000</span> 🪙</div>
+        <button class="redeem-btn locked" id="redeem-btn" onclick="openRedeemForm()">🔒 Unlock at 15,000 Coins</button>
+    </div>
+</div>
+
+<!-- ============ REDEEM FORM ============ -->
+<div id="redeem-form">
+    <div class="rf-title">🎁 Redeem Voucher</div>
+    <div class="rf-sub">Tap below to open the claim form — fill your details there.<br>Voucher sent within 48 hours.</div>
+    <div class="rf-note">⚠️ One mobile number = One voucher only.<br>Take a screenshot of your Wallet (showing coins) before opening the form.<br>Voucher sent via WhatsApp / Email.<br>Fake details will result in permanent block.</div>
+    <button class="rf-submit" onclick="submitRedeem()">✅ Open Claim Form</button>
+    <button class="rf-cancel" onclick="closeRedeemForm()">← Go Back</button>
+</div>
+
+<!-- ============ DAILY LIMIT SCREEN ============ -->
+<div id="daily-limit-screen">
+    <div class="dl-icon">🏁</div>
+    <div class="dl-title">Daily Limit Reached!</div>
+    <div class="dl-msg">You've earned maximum 500 coins today (₹5 value).<br>Come back tomorrow to earn more!</div>
+    <div class="dl-timer" id="dl-timer">00:00:00</div>
+    <button class="dl-btn" onclick="hideDailyLimit()">← Back to Home</button>
+</div>
+<div id="home-screen">
+    <div class="home-particles" id="particles"></div>
+
+    <div class="home-title">CalcMind</div>
+    <div class="home-subtitle">Choose Your Battle</div>
+
+    <div class="game-cards-wrapper">
+
+        <!-- Game 1 Card -->
+        <div class="game-card card-math" onclick="loadGame(1)">
+            <div class="game-card-glow"></div>
+            <div class="card-icon">🧮</div>
+            <div class="card-info">
+                <div class="card-title">MATH BOOSTER</div>
+                <div class="card-desc">Catch the falling numbers! Test your math speed with 3 difficulty levels.</div>
+                <div class="card-tags">
+                    <span class="tag">EASY</span>
+                    <span class="tag">NORMAL</span>
+                    <span class="tag">HARD</span>
+                    
+                </div>
+            </div>
+            <div class="card-arrow">›</div>
+        </div>
+
+        <!-- Game 2 Card -->
+        <div class="game-card card-snake" onclick="loadGame(2)">
+            <div class="game-card-glow"></div>
+            <div class="card-icon">🐍</div>
+            <div class="card-info">
+                <div class="card-title">SNAKE MATH</div>
+                <div class="card-desc">Guide the snake to correct answers! Progressive math challenges across 12 levels.</div>
+                <div class="card-tags">
+                    <span class="tag">+</span>
+                    <span class="tag">−</span>
+                    <span class="tag">×</span>
+                    <span class="tag">÷</span>
+                </div>
+            </div>
+            <div class="card-arrow">›</div>
+        </div>
+
+        <!-- Game 3 Card — Emoji Spelling -->
+        <div class="game-card card-spell" onclick="loadGame(3)">
+            <div class="game-card-glow"></div>
+            <div class="card-icon">🔤</div>
+            <div class="card-info">
+                <div class="card-title">EMOJI SPELLING</div>
+                <div class="card-desc">See the emoji, spell the word! 4 levels — Easy to Expert. 1 coin per level!</div>
+                <div class="card-tags">
+                    <span class="tag">EASY</span>
+                    <span class="tag">HARD</span>
+                    <span class="tag">EXPERT</span>
+                </div>
+            </div>
+            <div class="card-arrow">›</div>
+        </div>
+
+        <!-- Game 4 Card — Memory Match -->
+        <div class="game-card card-match" onclick="loadGame(4)">
+            <div class="game-card-glow"></div>
+            <div class="card-icon">🃏</div>
+            <div class="card-info">
+                <div class="card-title">MEMORY MATCH</div>
+                <div class="card-desc">Flip cards, find the pairs! 14 levels across Easy, Normal & Hard. 1 coin per level!</div>
+                <div class="card-tags">
+                    <span class="tag">EASY</span>
+                    <span class="tag">NORMAL</span>
+                    <span class="tag">HARD</span>
+                </div>
+            </div>
+            <div class="card-arrow">›</div>
+        </div>
+
+    </div>
+
+        <div class="home-footer">⚡ Brain Training Games ⚡</div>
+    <!-- Ads Toggle Section -->
+    <div id="ads-toggle-section" style="margin-top:20px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:14px 18px;width:100%;max-width:360px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span id="ads-toggle-icon" style="font-size:20px;">🪙</span>
+                <div>
+                    <div id="ads-toggle-title" style="font-family:Orbitron,monospace;font-size:12px;font-weight:700;color:#f0b90b;letter-spacing:1px;">ADS & REWARDS ON</div>
+                </div>
+            </div>
+            <div id="ads-toggle-btn" onclick="toggleAdsFromHome()" style="width:52px;height:28px;border-radius:14px;background:#f0b90b;cursor:pointer;position:relative;transition:background 0.3s;">
+                <div id="ads-toggle-knob" style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#000;transition:right 0.3s;"></div>
+            </div>
+        </div>
+        <div id="ads-toggle-desc" style="font-size:10px;color:#6b7280;letter-spacing:0.5px;line-height:1.5;">BUTTON OFF = NO COINS · NO REWARDS · NO VOUCHERS</div>
+    </div>
+
+    <button onclick="openPrivacyPolicy()" style="margin-top:14px;background:none;border:none;color:#374151;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;font-family:'Poppins',sans-serif;text-decoration:underline;padding:4px 8px;">🔒 Privacy Policy</button>
+</div>
+
+<!-- Back Button (दोन्ही games मध्ये दिसेल) -->
+<button class="back-btn" id="back-btn" onclick="goHome()">← HOME</button>
+
+<!-- ============ PRIVACY POLICY MODAL ============ -->
+<div id="privacy-modal" style="display:none; position:fixed; inset:0; z-index:9999999; background:rgba(0,0,0,0.88); backdrop-filter:blur(8px); overflow-y:auto; padding:20px 0 40px;">
+  <div style="max-width:460px; margin:0 auto; padding:0 16px;">
+    <div style="position:sticky; top:0; z-index:10; background:linear-gradient(135deg,#0d1f3c,#010409); border-bottom:1px solid rgba(0,243,255,0.2); padding:16px 20px; border-radius:16px 16px 0 0; display:flex; align-items:center; justify-content:space-between;">
+      <div>
+        <div style="font-family:'Orbitron',monospace; font-size:14px; font-weight:900; color:#00f3ff; letter-spacing:1px;">🔒 PRIVACY POLICY</div>
+        <div style="font-size:10px; color:#4a5568; margin-top:2px; letter-spacing:1px;">CalcMind — Last updated: June 2025</div>
+      </div>
+      <button onclick="closePrivacyPolicy()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#9ca3af; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; font-family:'Poppins',sans-serif;">✕</button>
+    </div>
+    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-top:none; border-radius:0 0 16px 16px; padding:22px 20px; color:#d1d5db; font-family:'Poppins',sans-serif; font-size:12.5px; line-height:1.75;">
+
+      <p style="color:#9ca3af; font-size:11px; margin-bottom:18px;">This Privacy Policy applies to the <b style="color:#e5e7eb;">CalcMind</b> app ("App") operated by its developer. By using this App, you agree to the terms described below.</p>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#00f3ff; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(0,243,255,0.15);">1. INFORMATION WE COLLECT</div>
+        <p style="margin-bottom:8px;">The App is designed to be used without account registration. However, the following data may be collected:</p>
+        <ul style="padding-left:16px; margin:0; display:flex; flex-direction:column; gap:5px;">
+          <li><b style="color:#e5e7eb;">Device Information:</b> Device model, OS version, and unique device identifiers for proper functioning of the App.</li>
+          <li><b style="color:#e5e7eb;">Usage Data:</b> Game scores, coins earned, daily progress, and streak data — stored locally on your device.</li>
+          <li><b style="color:#e5e7eb;">Advertising Data:</b> Google AdMob may collect advertising ID and usage data to serve relevant ads. See Section 4.</li>
+          <li><b style="color:#e5e7eb;">Voucher Redemption (Optional):</b> If you choose to redeem a Google Play Voucher, you will be directed to an external Google Form where you submit your name, mobile number (WhatsApp), email address, coins earned, and a screenshot of your in-app wallet, solely to verify and process the voucher request. This information is collected and stored via Google Forms/Google Sheets, governed by <a href="https://policies.google.com/privacy" target="_blank" style="color:#00f3ff;">Google's Privacy Policy</a>.</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#39ff14; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(57,255,20,0.15);">2. HOW WE USE YOUR INFORMATION</div>
+        <ul style="padding-left:16px; margin:0; display:flex; flex-direction:column; gap:5px;">
+          <li>To operate and improve the App's games (Math Booster, Snake Math).</li>
+          <li>To track your coins, daily limits, and streak for a personalised experience.</li>
+          <li>To display relevant advertisements via Google AdMob.</li>
+          <li>To process Google Play Voucher redemption requests (only when submitted by you).</li>
+          <li>To analyse aggregate usage patterns and improve gameplay.</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#a855f7; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(168,85,247,0.15);">3. DATA STORAGE</div>
+        <p style="margin-bottom:8px;">All game progress data (User ID, coins, scores, streaks, daily earnings) is stored <b style="color:#e5e7eb;">locally on your device only</b> using browser localStorage. This data is not transmitted to any external server by the App itself.</p>
+        <p style="margin-bottom:8px;"><b style="color:#e5e7eb;">⚠️ Important — No Backup or Recovery:</b> Your User ID and all associated coins/progress exist only on this device. The App does not back up this data to any server or account. <b style="color:#e5e7eb;">If you uninstall the App, clear app data/cache, or switch to a new device, your User ID and all accumulated coins will be permanently lost and cannot be recovered or restored by the developer.</b></p>
+        <p>Maintaining and safeguarding your device (avoiding uninstall, accidental cache/data clearing) to preserve your User ID and coins is solely your responsibility as the user. The developer is not liable for any loss of ID, coins, or progress resulting from app uninstallation, data clearing, device change, device reset, or device loss.</p>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#f0b90b; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(240,185,11,0.15);">4. ADVERTISING (GOOGLE ADMOB)</div>
+        <p style="margin-bottom:8px;">This App uses <b style="color:#e5e7eb;">Google AdMob</b> to display banner and video advertisements. AdMob may collect and use data including:</p>
+        <ul style="padding-left:16px; margin:0 0 8px; display:flex; flex-direction:column; gap:5px;">
+          <li>Advertising ID (GAID / IDFA)</li>
+          <li>App interaction data and crash reports</li>
+          <li>General location (country/region level)</li>
+          <li>Device and network information</li>
+        </ul>
+        <p>Google's data collection is governed by the <a href="https://policies.google.com/privacy" target="_blank" style="color:#00f3ff;">Google Privacy Policy</a>. You can opt out of personalised ads via: <b style="color:#e5e7eb;">Settings → Google → Ads → Opt out of Ads Personalisation</b>.</p>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#00f3ff; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(0,243,255,0.15);">5. COINS &amp; VOUCHER REWARD SYSTEM</div>
+        <ul style="padding-left:16px; margin:0 0 8px; display:flex; flex-direction:column; gap:5px;">
+          <li>Coins are earned by playing games, watching video ads, and daily logins.</li>
+          <li>A maximum of <b style="color:#e5e7eb;">500 coins per day</b> can be earned.</li>
+          <li>Accumulating 15,000 coins makes you eligible to request a <b style="color:#e5e7eb;">Google Play Voucher</b>.</li>
+          <li>Voucher availability is subject to stock and developer discretion.</li>
+          <li>Providing false information during voucher redemption will result in permanent disqualification.</li>
+          <li>One mobile number is permitted to redeem only one voucher; duplicate or repeat requests from the same mobile number will be rejected.</li>
+        </ul>
+        <p style="color:#6b7280; font-size:11px;">⚠️ Coins have no standalone monetary value until a voucher is officially issued and delivered. Coins are tied to your device's local User ID — see Section 3 regarding permanent loss on uninstall/data clearing.</p>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#39ff14; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(57,255,20,0.15);">6. CHILDREN'S PRIVACY</div>
+        <p>This App is intended for a general audience. We do <b style="color:#e5e7eb;">not</b> knowingly collect personal information from children under the age of 13. If we become aware that personal data of a child under 13 has been inadvertently collected, it will be deleted promptly upon request. If you believe your child has provided personal information, please contact us immediately.</p>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#a855f7; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(168,85,247,0.15);">7. THIRD-PARTY SERVICES</div>
+        <ul style="padding-left:16px; margin:0; display:flex; flex-direction:column; gap:5px;">
+          <li><a href="https://policies.google.com/privacy" target="_blank" style="color:#00f3ff;">Google AdMob</a> — Advertising</li>
+          <li><a href="https://fonts.google.com/about" target="_blank" style="color:#00f3ff;">Google Fonts</a> — Typography (Orbitron, Poppins)</li>
+          <li><a href="https://play.google.com/about/play-terms/" target="_blank" style="color:#00f3ff;">Google Play</a> — Voucher Redemption</li>
+          <li><a href="https://policies.google.com/privacy" target="_blank" style="color:#00f3ff;">Google Forms / Google Sheets</a> — Voucher Claim Data Collection</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#f0b90b; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(240,185,11,0.15);">8. YOUR RIGHTS</div>
+        <ul style="padding-left:16px; margin:0; display:flex; flex-direction:column; gap:5px;">
+          <li>You may clear all local App data at any time via your device browser/app settings.</li>
+          <li>You may opt out of personalised advertising through your device settings.</li>
+          <li>You may request deletion of any personal data submitted during voucher redemption by contacting us.</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#00f3ff; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(0,243,255,0.15);">9. CHANGES TO THIS POLICY</div>
+        <p>We may update this Privacy Policy from time to time. Changes will be reflected with an updated date at the top of this page. Continued use of the App after changes constitutes acceptance of the revised policy.</p>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <div style="font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:#39ff14; letter-spacing:1px; margin-bottom:8px; padding-bottom:5px; border-bottom:1px solid rgba(57,255,20,0.15);">10. CONTACT US</div>
+        <p>If you have any questions or concerns about this Privacy Policy, please contact the developer. We are committed to addressing your queries promptly.</p>
+      </div>
+
+      <button onclick="closePrivacyPolicy()" style="width:100%; margin-top:24px; padding:14px; background:linear-gradient(135deg,#00f3ff22,#a855f722); border:1px solid rgba(0,243,255,0.4); color:#00f3ff; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; letter-spacing:1px;">✕ CLOSE POLICY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== GAME 1 CONTAINER ===================== -->
+<div id="game1-container">
+
+<div id="g1-wrap">
+
+    <div id="menu" class="screen">
+        <h1 style="color: var(--neon-blue); font-size: 2.2rem; margin-bottom: 30px; text-shadow: 0 0 15px var(--neon-blue);">Math & Brain Booster</h1>
+        <button class="btn-neon" onclick="g1_selectMode('easy')">EASY<small>Simple addition &amp; subtraction</small></button>
+        <button class="btn-neon" style="border-color: #eab308; color: #eab308;" onclick="g1_selectMode('normal')">NORMAL<small>Mixed operations &amp; speed</small></button>
+        <button class="btn-neon" style="border-color: var(--neon-red); color: var(--neon-red);" onclick="g1_selectMode('hard')">HARD<small>Advanced math challenges</small></button>
+        
+    </div>
+
+    
+        <div id="display-area" style="font-size: 4.5rem; font-weight: bold; color: #fff; text-shadow: 0 0 25px var(--neon-purple); letter-spacing: 8px;"></div>
+        <div id="recall-area" style="display:none; width: 100%;">
+            <p style="color: var(--neon-purple); font-size: 1.4rem; margin-bottom: 25px; font-weight: bold;">What did you see?</p>
+            <div id="mem-button-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; padding: 10px;"></div>
+            <div id="correct-reveal" style="margin-top: 30px; font-size: 1.6rem; font-weight: bold; color: var(--neon-green); display: none; background: rgba(57, 255, 20, 0.1); padding: 10px; border-radius: 10px;">
+                Answer: <span id="actual-word" style="color: #fff;"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-screen" class="screen" style="display:none;">
+        <h2 id="info-lvl-title" style="color: var(--neon-blue);">LEVEL 1</h2>
+        <div style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; width: 85%; margin-bottom: 25px; border: 1px solid rgba(0, 243, 255, 0.3);">
+            <p style="font-size: 4rem; margin: 0; color: #fff;" id="info-op">+</p>
+            <p id="info-op-text" style="font-size: 1.5rem; color: var(--neon-blue);">ADDITION</p>
+        </div>
+        <button class="btn-neon" style="background:var(--neon-blue); color:black; width:200px;" onclick="g1_startGame()">START</button>
+    </div>
+
+    <div id="victory-screen" class="screen" style="display:none;">
+        <div style="font-size: 80px;">🏆</div>
+        <h2 style="color: var(--gold);">LEVEL CLEARED!</h2>
+        <div class="cheque">
+            <div style="text-align:right; font-size:10px;">IPL MATH SERIES</div>
+            <div style="margin: 15px 0; text-align:left; border-bottom:1px solid #94a3b8;">Pay: <b>The Champion</b></div>
+            <div style="margin: 10px 0; text-align:left; border-bottom:1px solid #94a3b8;">Marks: <span id="marks-val-txt">0</span></div>
+            <div style="text-align:right; font-weight:bold; font-size:24px;">₹ <span id="cheque-amt">0</span>/-</div>
+        </div>
+        <button id="next-btn" class="btn-neon" style="background:var(--neon-green); color:black; border:none;">NEXT LEVEL</button>
+    </div>
+
+    <div id="game-ui" style="display:none;">
+        <div class="header">
+            <div class="stat-capsule">LVL: <span id="lvl-txt">1</span></div>
+            <div class="stat-capsule" style="border-color: #fff; color: #fff;">
+                <span id="op-helper" style="color:var(--neon-blue); margin-right:5px;">+</span>ANS: <span id="goal-txt">0</span>
+            </div>
+            <div class="stat-capsule">MARKS: <span id="marks-txt">0</span></div>
+        </div>
+        <div id="timer-box">15s</div>
+        <div id="game-area">
+            <div id="pot-container">
+                <div id="glass-pot">
+                    <span id="ball-val">0</span>
+                    <div class="water-wave" id="water-level"></div>
+                </div>
+            </div>
+        </div>
+        <div id="button-grid">
+            <button class="ans-btn" onclick="g1_check(this)">0</button>
+            <button class="ans-btn" onclick="g1_check(this)">0</button>
+            <button class="ans-btn" onclick="g1_check(this)">0</button>
+            <button class="ans-btn" onclick="g1_check(this)">0</button>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- ===================== GAME 2 CONTAINER ===================== -->
+<div id="game2-container">
+
+<div id="g2-wrap">
+    <div id="aquarium"></div>
+    <div id="ui" style="display:none;">
+        <div class="stat-box">LEVEL<br><span id="g2-lvl-txt">1</span></div>
+        <div class="stat-box">SCORE<br><span id="g2-score-txt">0</span></div>
+        <div class="stat-box">LIVES<br><span id="g2-life-txt">5</span></div>
+    </div>
+    <div id="math-display">
+        <div class="question-container">
+            <div class="q-text">
+                <span id="n1" style="color:#39ff14">?</span> <span id="op-txt">+</span>
+                <span style="color: #00f3ff;">?</span> = <span id="n2" style="color:#39ff14">?</span>
+            </div>
+            <div class="timer-box">NEXT IN: <span id="timer-txt">10</span>S</div>
+        </div>
+    </div>
+    <div id="mode-select-modal" class="modal">
+        <div class="modal-content">
+            <h1 style="color: #fff; font-family: 'Orbitron', monospace; margin-bottom: 30px;">CHOOSE DIFFICULTY</h1>
+            <button class="mode-btn easy-btn" onclick="g2_setDifficulty('easy')">Easy (0-50)</button><br>
+            <button class="mode-btn normal-btn" onclick="g2_setDifficulty('normal')">Normal (0-100)</button><br>
+            <button class="mode-btn hard-btn" onclick="g2_setDifficulty('hard')">Hard (0-200)</button>
+        </div>
+    </div>
+    <div id="op-popup" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h1 id="op-title" style="color: #39ff14; font-family: 'Orbitron', monospace;"></h1>
+            <p id="op-desc" style="font-size: 18px; margin: 20px 0;"></p>
+            <button class="start-btn" onclick="g2_closeOpPopup()">CONTINUE</button>
+        </div>
+    </div>
+    <div id="level-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h1 style="color: #39ff14; font-family: 'Orbitron', monospace;">LEVEL COMPLETE</h1>
+            <button class="start-btn" onclick="g2_advanceLevel()">NEXT LEVEL</button>
+        </div>
+    </div>
+    <div id="over-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h1 style="color: #ff3131; font-family: 'Orbitron', monospace;">GAME OVER</h1>
+            <button class="start-btn" onclick="g2_restart()">RESTART</button>
+        </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+</div>
+</div>
+
+<!-- ===================== GAME 3 CONTAINER — EMOJI SPELLING ===================== -->
+<div id="game3-container" style="position:fixed;inset:0;z-index:5000;display:none;">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+#g3-root{width:100%;height:100%;background:#060818;display:flex;flex-direction:column;align-items:center;justify-content:space-around;padding:clamp(8px,2vh,20px) clamp(8px,2vw,20px);position:relative;overflow:hidden;font-family:'Poppins',sans-serif}
+#g3-root::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,#1a0f3a55 0%,transparent 65%);pointer-events:none}
+.g3-lvl-badge{font-family:'Orbitron',sans-serif;font-size:clamp(9px,1.5vw,13px);font-weight:900;padding:4px 14px;border-radius:20px;letter-spacing:2px;border:1.5px solid;transition:all 0.4s}
+.g3lv1{color:#39ff14;border-color:#39ff1444;background:#0d1608;box-shadow:0 0 12px #39ff1422}
+.g3lv2{color:#3b9eff;border-color:#3b9eff44;background:#060c18;box-shadow:0 0 12px #3b9eff22}
+.g3lv3{color:#ff9f0a;border-color:#ff9f0a44;background:#180e00;box-shadow:0 0 12px #ff9f0a22}
+.g3lv4{color:#ff3b3b;border-color:#ff3b3b44;background:#180000;box-shadow:0 0 12px #ff3b3b22}
+.g3-title{font-family:'Orbitron',sans-serif;font-size:clamp(12px,2vw,16px);font-weight:900;letter-spacing:3px;transition:color 0.4s}
+.g3lv1c{color:#39ff14;text-shadow:0 0 14px #39ff1488}
+.g3lv2c{color:#3b9eff;text-shadow:0 0 14px #3b9eff88}
+.g3lv3c{color:#ff9f0a;text-shadow:0 0 14px #ff9f0a88}
+.g3lv4c{color:#ff3b3b;text-shadow:0 0 14px #ff3b3b88}
+.g3-top-row{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:500px;gap:8px}
+.g3-qnum{font-family:'Exo 2',sans-serif;font-size:clamp(9px,1.4vw,11px);color:#2a3040;letter-spacing:2px;font-weight:700;text-transform:uppercase}
+.g3-tbar-bg{width:100%;max-width:500px;height:6px;background:rgba(255,255,255,0.06);border-radius:10px;overflow:hidden}
+.g3-tbar{height:6px;border-radius:10px;width:100%;background:#39ff14;transition:width 0.1s linear,background 0.3s}
+.g3-score-row{display:flex;gap:clamp(14px,3vw,28px);align-items:center}
+.g3-sc{font-family:'Exo 2',sans-serif;font-size:clamp(11px,1.8vw,14px);font-weight:900;color:#fbbf24;letter-spacing:1.5px}
+.g3-stk{font-family:'Exo 2',sans-serif;font-size:clamp(11px,1.8vw,14px);font-weight:900;color:#a78bfa;letter-spacing:1.5px}
+.g3-lives-row{font-family:'Exo 2',sans-serif;font-size:clamp(13px,2vw,18px);letter-spacing:3px;min-height:24px}
+.g3-pu-row{display:flex;gap:10px;justify-content:center}
+.g3-pu-btn{font-size:clamp(18px,3vw,24px);background:#0b0d20;border:1.5px solid #141828;border-radius:12px;width:clamp(44px,7vw,54px);height:clamp(40px,6vw,50px);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;position:relative}
+.g3-pu-btn:active{transform:scale(0.88)}
+.g3-pu-btn.g3used{opacity:0.3;pointer-events:none}
+.g3-pu-btn .g3-pu-count{position:absolute;top:2px;right:4px;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:900;color:#fbbf24}
+.g3-pu-btn.g3glow-pu{border-color:#fbbf2466;box-shadow:0 0 14px #fbbf2433}
+.g3-emoji-box{font-size:clamp(60px,14vw,110px);line-height:1;text-align:center;filter:drop-shadow(0 0 24px rgba(255,255,255,0.15));transition:transform 0.15s}
+.g3-emoji-box.g3pop{animation:g3epop 0.3s ease-out}
+@keyframes g3epop{0%{transform:scale(0.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.g3-cat-tag{font-family:'Exo 2',sans-serif;font-size:clamp(9px,1.4vw,11px);font-weight:700;color:#1e2a1e;letter-spacing:2px;text-transform:uppercase}
+.g3-answer-row{display:flex;gap:clamp(4px,1vw,8px);flex-wrap:wrap;justify-content:center;min-height:clamp(44px,8vh,58px);align-items:center}
+.g3-slot{width:clamp(34px,6vw,46px);height:clamp(40px,7vh,52px);border-radius:10px;background:#0b0d20;border:1.5px solid #141828;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:clamp(14px,2.5vw,20px);font-weight:900;color:#39ff14;cursor:pointer;transition:all 0.15s;position:relative}
+.g3-slot.g3filled{border-color:#39ff1444;background:#0d1608;color:#39ff14}
+.g3-slot.g3filled:active{transform:scale(0.88)}
+.g3-slot.g3cflash{animation:g3cf 0.35s ease-out}
+.g3-slot.g3wflash{animation:g3wf 0.3s ease-out}
+.g3-slot.g3hinted{border-color:#fbbf2466;color:#fbbf24;background:#18140a}
+@keyframes g3cf{0%{transform:scale(1)}40%{transform:scale(1.3);filter:brightness(3)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes g3wf{0%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}100%{transform:translateX(0)}}
+.g3-letters-row{display:flex;gap:clamp(5px,1.2vw,9px);flex-wrap:wrap;justify-content:center;max-width:min(360px,92vw)}
+.g3-lbtn{width:clamp(40px,7vw,52px);height:clamp(44px,8vh,56px);border-radius:12px;background:#0b0d20;border:1.5px solid #141828;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:clamp(16px,2.8vw,22px);font-weight:900;color:#3a3f5c;cursor:pointer;transition:transform 0.08s,opacity 0.15s}
+.g3-lbtn:active{transform:scale(0.88)}
+.g3-lbtn.g3lused{opacity:0;pointer-events:none}
+.g3-lbtn.g3wtap{animation:g3wt 0.25s ease-out}
+@keyframes g3wt{0%{transform:scale(1)}30%{transform:scale(1.2);filter:brightness(2)}100%{transform:scale(1)}}
+#g3-msg{font-family:'Exo 2',sans-serif;font-size:clamp(11px,1.8vw,14px);font-weight:900;min-height:22px;text-align:center;letter-spacing:2px;text-transform:uppercase}
+#g3-sp{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.g3-ov{position:absolute;inset:0;background:rgba(6,8,24,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,2.5vh,18px);z-index:10;padding:20px}
+.g3-ov h2{font-family:'Orbitron',sans-serif;font-size:clamp(14px,3vw,20px);font-weight:900;color:#39ff14;text-shadow:0 0 14px #39ff1466;letter-spacing:3px;text-align:center}
+.g3-ov .g3-big{font-family:'Orbitron',sans-serif;font-size:clamp(38px,8vw,58px);font-weight:900;color:#fbbf24;text-shadow:0 0 22px #fbbf2466;line-height:1}
+.g3-ov .g3-sub{font-family:'Exo 2',sans-serif;color:#2a3040;font-size:clamp(10px,1.5vw,13px);letter-spacing:2px;text-transform:uppercase;font-weight:700;text-align:center}
+.g3-ov .g3-hint-txt{font-family:'Exo 2',sans-serif;color:#6b7280;font-size:clamp(10px,1.5vw,12px);letter-spacing:1px;text-align:center;max-width:280px;line-height:1.7}
+.g3-lvl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:360px;width:100%}
+.g3-lvl-card{font-family:'Orbitron',sans-serif;font-size:clamp(9px,1.4vw,11px);font-weight:700;padding:clamp(10px,2vh,14px) 10px;border-radius:14px;border:1.5px solid #141828;background:#0b0d20;color:#2a3040;cursor:pointer;letter-spacing:1px;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.g3-lvl-card .g3-lc-icon{font-size:clamp(18px,3vw,24px)}
+.g3-lvl-card .g3-lc-name{font-size:clamp(9px,1.4vw,11px)}
+.g3-lvl-card .g3-lc-desc{font-family:'Exo 2',sans-serif;font-size:clamp(8px,1.2vw,10px);color:#1a2030;letter-spacing:1px;font-weight:400;text-align:center;line-height:1.5}
+.g3-lvl-card.g3sel1{border-color:#39ff1455;color:#39ff14;background:#0d1608;box-shadow:0 0 16px #39ff1422}
+.g3-lvl-card.g3sel2{border-color:#3b9eff55;color:#3b9eff;background:#060c18;box-shadow:0 0 16px #3b9eff22}
+.g3-lvl-card.g3sel3{border-color:#ff9f0a55;color:#ff9f0a;background:#180e00;box-shadow:0 0 16px #ff9f0a22}
+.g3-lvl-card.g3sel4{border-color:#ff3b3b55;color:#ff3b4b;background:#180000;box-shadow:0 0 16px #ff3b3b22}
+.g3-coin-reward{font-family:'Exo 2',sans-serif;font-size:clamp(10px,1.5vw,12px);color:#f0b90b;letter-spacing:1px;text-align:center;font-weight:700}
+.g3-start-btn{font-family:'Orbitron',sans-serif;font-size:clamp(12px,2vw,15px);font-weight:900;padding:clamp(11px,2vh,15px) clamp(28px,5vw,42px);border-radius:26px;border:none;background:#39ff14;color:#060818;cursor:pointer;letter-spacing:2px;box-shadow:0 0 22px #39ff1466;transition:transform 0.15s}
+.g3-start-btn:active{transform:scale(0.95)}
+.g3-start-btn.g3lv2s{background:#3b9eff;box-shadow:0 0 22px #3b9eff66}
+.g3-start-btn.g3lv3s{background:#ff9f0a;box-shadow:0 0 22px #ff9f0a66}
+.g3-start-btn.g3lv4s{background:#ff3b3b;box-shadow:0 0 22px #ff3b3b66}
+.g3-fin-wrap{display:none;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.g3-streak-badge{position:absolute;font-family:'Orbitron',sans-serif;font-size:clamp(9px,1.5vw,12px);font-weight:900;color:#a78bfa;border:1px solid #a78bfa44;background:#0d0a18;padding:3px 10px;border-radius:12px;top:clamp(8px,1.5vh,14px);left:clamp(8px,1.5vw,14px);z-index:5;letter-spacing:1px}
+</style>
+<div id="g3-root">
+  <canvas id="g3-sp"></canvas>
+  <div class="g3-streak-badge" id="g3-streak-badge">×1</div>
+  <div class="g3-top-row">
+    <div class="g3-lvl-badge g3lv1" id="g3-lvl-badge">LV 1 · EASY</div>
+    <div class="g3-title g3lv1c" id="g3-title-txt">🔤 EMOJI SPELLING</div>
+    <div class="g3-qnum" id="g3-qnum">0 / 10</div>
+  </div>
+  <div class="g3-tbar-bg"><div class="g3-tbar" id="g3-tbar"></div></div>
+  <div class="g3-score-row">
+    <div class="g3-sc">⭐ <span id="g3-sc">0</span></div>
+    <div class="g3-stk">🔥 <span id="g3-stk">0</span></div>
+    <div class="g3-lives-row" id="g3-lives-row">❤️❤️❤️</div>
+  </div>
+  <div class="g3-pu-row" id="g3-pu-row">
+    <div class="g3-pu-btn g3glow-pu" id="g3-pu-hint" onclick="g3_useHint()" title="Hint">💡<span class="g3-pu-count" id="g3-pu-hint-c">2</span></div>
+    <div class="g3-pu-btn g3glow-pu" id="g3-pu-time" onclick="g3_useTimeFreeze()" title="Time Freeze">⏸<span class="g3-pu-count" id="g3-pu-time-c">1</span></div>
+    <div class="g3-pu-btn g3glow-pu" id="g3-pu-skip" onclick="g3_useSkip()" title="Skip">⏭<span class="g3-pu-count" id="g3-pu-skip-c">1</span></div>
+  </div>
+  <div class="g3-emoji-box" id="g3-emoji-box">?</div>
+  <div class="g3-cat-tag" id="g3-cat-tag">—</div>
+  <div class="g3-answer-row" id="g3-answer-row"></div>
+  <div class="g3-letters-row" id="g3-letters-row"></div>
+  <div id="g3-msg"> </div>
+  <!-- OVERLAY -->
+  <div class="g3-ov" id="g3-ov">
+    <h2 id="g3-ov-title">🔤 EMOJI SPELLING</h2>
+    <div class="g3-hint-txt" id="g3-ov-hint">LOOK AT THE EMOJI AND SPELL THE WORD!<br>TAP THE LETTERS IN THE RIGHT ORDER!</div>
+    <div class="g3-coin-reward">🪙 1 COIN REWARD PER LEVEL COMPLETED!</div>
+    <div class="g3-lvl-grid">
+      <div class="g3-lvl-card g3sel1" id="g3-lc1" onclick="g3_selLvl(1,this)">
+        <div class="g3-lc-icon">🟢</div>
+        <div class="g3-lc-name">LV 1 · EASY</div>
+        <div class="g3-lc-desc">Simple words<br>15 seconds<br>3 Lives</div>
+      </div>
+      <div class="g3-lvl-card" id="g3-lc2" onclick="g3_selLvl(2,this)">
+        <div class="g3-lc-icon">🔵</div>
+        <div class="g3-lc-name">LV 2 · NORMAL</div>
+        <div class="g3-lc-desc">Medium words<br>12 seconds<br>3 Lives</div>
+      </div>
+      <div class="g3-lvl-card" id="g3-lc3" onclick="g3_selLvl(3,this)">
+        <div class="g3-lc-icon">🟠</div>
+        <div class="g3-lc-name">LV 3 · HARD</div>
+        <div class="g3-lc-desc">Hard words<br>10 seconds<br>2 Lives</div>
+      </div>
+      <div class="g3-lvl-card" id="g3-lc4" onclick="g3_selLvl(4,this)">
+        <div class="g3-lc-icon">🔴</div>
+        <div class="g3-lc-name">LV 4 · EXPERT</div>
+        <div class="g3-lc-desc">Expert words<br>7 seconds<br>1 Life ☠️</div>
+      </div>
+    </div>
+    <button class="g3-start-btn" id="g3-start-btn" onclick="g3_startGame()">▶ START</button>
+    <div class="g3-fin-wrap" id="g3-fin">
+      <div class="g3-big" id="g3-fscore">0</div>
+      <div style="font-size:clamp(20px,4vw,28px);letter-spacing:4px" id="g3-fmedals"></div>
+      <div class="g3-sub" id="g3-finfo"></div>
+      <div style="font-family:'Exo 2',sans-serif;font-size:clamp(9px,1.4vw,11px);color:#1e2438;letter-spacing:1px;line-height:2" id="g3-fbreak"></div>
+      <div class="g3-coin-reward" id="g3-coin-earned" style="margin-top:4px"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== GAME 4 CONTAINER — MEMORY MATCH ===================== -->
+<div id="game4-container" style="position:fixed;inset:0;z-index:5000;display:none;background:#060818;">
+<style>
+#g4-root{width:100%;height:100%;background:#060818;display:flex;flex-direction:column;align-items:center;padding:10px 10px 6px;gap:5px;position:relative;overflow:hidden}
+#g4-root::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,#1a0f3a55 0%,transparent 65%);pointer-events:none}
+.g4-title{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:900;letter-spacing:3px;color:var(--g4ac,#39ff14);text-shadow:0 0 14px var(--g4ac,#39ff14);flex-shrink:0;transition:color 0.5s}
+.g4-stats-row{display:flex;gap:6px;width:100%;flex-shrink:0}
+.g4-stat{flex:1;background:#0b0d20;border:1px solid #141828;border-radius:10px;padding:5px 4px;text-align:center}
+.g4-stat-val{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;color:#fbbf24}
+.g4-stat-lbl{font-family:'Exo 2',sans-serif;font-size:9px;color:#2a3040;letter-spacing:1px;margin-top:1px;text-transform:uppercase}
+.g4-stat.g4-twarn .g4-stat-val{color:#ef4444;animation:g4pulse 0.5s ease infinite alternate}
+@keyframes g4pulse{from{opacity:1}to{opacity:0.4}}
+.g4-hud-row{display:flex;gap:6px;width:100%;align-items:center;justify-content:space-between;flex-shrink:0}
+.g4-lvtag{font-family:'Exo 2',sans-serif;font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid var(--g4ac,#39ff14)44;color:var(--g4ac,#39ff14);background:var(--g4ac,#39ff14)11;transition:all 0.5s}
+.g4-stktag{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:900;color:#fbbf24;background:#fbbf2411;border:1px solid #fbbf2433;padding:3px 10px;border-radius:20px}
+.g4-grid{display:grid;gap:5px;width:100%;flex:1;min-height:0}
+.g4-card{cursor:pointer;perspective:700px;position:relative}
+.g4-ci{width:100%;height:100%;transition:transform 0.32s cubic-bezier(.4,2,.55,.9);transform-style:preserve-3d;position:relative;border-radius:10px}
+.g4-card.g4f .g4-ci,.g4-card.g4m .g4-ci{transform:rotateY(180deg)}
+.g4-cf,.g4-cb{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center}
+.g4-cb{background:#0b0d20;border:1.5px solid #141828;transform:rotateY(180deg)}
+.g4-cf{background:#080b18;border:1.5px solid #0d1025}
+.g4-cf-dot{width:16px;height:16px;border-radius:50%;border:2px solid #141828;background:#0d1025}
+.g4-card.g4m .g4-cb{background:#0d1608;border-color:var(--g4ac,#39ff14)55}
+.g4-card.g4w .g4-ci{animation:g4shake 0.28s ease}
+@keyframes g4shake{0%,100%{transform:rotateY(180deg)}25%{transform:rotateY(180deg) translateX(-5px)}75%{transform:rotateY(180deg) translateX(5px)}}
+.g4-card.g4cf .g4-cb{animation:g4cflash 0.35s ease-out}
+@keyframes g4cflash{40%{box-shadow:0 0 24px var(--g4ac,#39ff14),0 0 48px var(--g4ac,#39ff14)55}}
+.g4-card.g4pv .g4-ci{transform:rotateY(180deg)}
+.g4-card.g4pv .g4-cb{border-color:var(--g4ac,#39ff14)88;background:#0d1020}
+#g4-msg{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:900;min-height:15px;text-align:center;letter-spacing:2px;text-transform:uppercase;color:#fff;flex-shrink:0}
+.g4-bbr{display:flex;gap:10px;width:100%;align-items:center;justify-content:center;flex-shrink:0;padding-bottom:2px}
+.g4-hbtn{font-family:'Exo 2',sans-serif;font-size:11px;font-weight:900;padding:7px 20px;border-radius:18px;border:1.5px solid #3a3f55;background:#0b0d20;color:#8a90aa;cursor:pointer;letter-spacing:2px}
+canvas#g4sp{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.g4-ov{position:absolute;inset:0;background:rgba(6,8,24,0.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:10;padding:24px 20px}
+.g4-hw{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%}
+.g4-logo{font-size:48px;line-height:1;filter:drop-shadow(0 0 18px #39ff1466)}
+.g4-htitle{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;letter-spacing:4px;color:#39ff14;text-shadow:0 0 20px #39ff1466;text-align:center;line-height:1.2}
+.g4-hbtns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:300px;margin-top:4px}
+.g4-hb{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;padding:15px 16px;border-radius:16px;border:none;cursor:pointer;letter-spacing:2px;text-align:left;display:flex;align-items:center;gap:12px}
+.g4-hb .g4-bi{display:flex;flex-direction:column;gap:2px}
+.g4-hb .g4-bd{font-family:'Exo 2',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;opacity:0.75;margin-top:1px}
+.g4-be{background:linear-gradient(135deg,#1a3d0f,#0d2008);color:#39ff14;border:1.5px solid #39ff1433}
+.g4-bn{background:linear-gradient(135deg,#3d2e00,#201800);color:#fbbf24;border:1.5px solid #fbbf2433}
+.g4-bh{background:linear-gradient(135deg,#1a1040,#0d0820);color:#818cf8;border:1.5px solid #818cf833}
+.g4-coin-reward{font-family:'Exo 2',sans-serif;font-size:11px;color:#f0b90b;letter-spacing:1px;text-align:center;font-weight:700;margin-top:4px}
+.g4-ww{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%}
+.g4-wt{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:900;letter-spacing:3px;color:var(--g4ac,#39ff14)}
+.g4-we{font-size:52px;line-height:1}
+.g4-ws{font-family:'Exo 2',sans-serif;color:#4a5068;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;text-align:center}
+.g4-wsr{display:flex;flex-direction:column;align-items:center;gap:2px}
+.g4-wstars{font-size:22px;letter-spacing:4px}
+.g4-wsc{font-family:'Orbitron',sans-serif;font-size:44px;font-weight:900;color:#fbbf24;text-shadow:0 0 22px #fbbf2466;line-height:1}
+.g4-wscl{font-family:'Exo 2',sans-serif;font-size:9px;color:#3a4060;letter-spacing:2px;text-transform:uppercase}
+.g4-wbadges{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.g4-badge{font-family:'Exo 2',sans-serif;font-size:9px;font-weight:900;letter-spacing:1.5px;color:#fbbf24;text-transform:uppercase;padding:3px 10px;border-radius:10px;background:#fbbf2411;border:1px solid #fbbf2433}
+.g4-badge.g{color:#39ff14;background:#39ff1411;border-color:#39ff1433}
+.g4-badge.p{color:#fb7185;background:#fb718511;border-color:#fb718533}
+.g4-wbtns{display:flex;gap:8px;width:100%;max-width:300px;margin-top:2px}
+.g4-wb{font-family:'Orbitron',sans-serif;font-size:10px;font-weight:900;padding:12px 0;border-radius:16px;border:none;cursor:pointer;letter-spacing:1.5px;flex:1}
+.g4-wnxt{background:var(--g4ac,#39ff14);color:#060818;box-shadow:0 0 18px var(--g4ac,#39ff14)55}
+.g4-whm{background:#1a1d30;color:#8a90aa;border:1.5px solid #3a3f55}
+.g4-pvbanner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;color:var(--g4ac,#39ff14);text-shadow:0 0 20px var(--g4ac,#39ff14);letter-spacing:3px;z-index:6;pointer-events:none;text-align:center;opacity:0;transition:opacity 0.3s}
+.g4-pvbanner.show{opacity:1}
+.g4h{display:none}
+</style>
+<div id="g4-root">
+  <canvas id="g4sp"></canvas>
+  <div class="g4-pvbanner" id="g4-pvb">MEMORIZE!<br><span style="font-size:12px;letter-spacing:2px" id="g4-pvc">3</span></div>
+  <div class="g4-title" id="g4-title">🃏 MEMORY MATCH</div>
+  <div class="g4-stats-row">
+    <div class="g4-stat" id="g4-tstat"><div class="g4-stat-val" id="g4-tval">0:00</div><div class="g4-stat-lbl">TIME</div></div>
+    <div class="g4-stat"><div class="g4-stat-val" id="g4-mval">0</div><div class="g4-stat-lbl">MOVES</div></div>
+    <div class="g4-stat"><div class="g4-stat-val" id="g4-pval">0/6</div><div class="g4-stat-lbl">PAIRS</div></div>
+  </div>
+  <div class="g4-hud-row">
+    <div class="g4-lvtag" id="g4-lvtag">LEVEL 1</div>
+    <div class="g4-stktag g4h" id="g4-stktag">🔥 x1</div>
+  </div>
+  <div class="g4-grid" id="g4-grid"></div>
+  <div id="g4-msg"> </div>
+  <div class="g4-bbr">
+    <button class="g4-hbtn g4h" id="g4-hbtn" onclick="g4_goHome()">← HOME</button>
+  </div>
+  <!-- OVERLAY -->
+  <div class="g4-ov" id="g4-ov">
+    <!-- HOME -->
+    <div class="g4-hw" id="g4-hview">
+      <div class="g4-logo">🃏</div>
+      <div class="g4-htitle">MEMORY<br>MATCH</div>
+      <div class="g4-coin-reward">🪙 1 COIN PER LEVEL COMPLETED!</div>
+      <div class="g4-hbtns">
+        <button class="g4-hb g4-be" onclick="g4_startDiff('easy')">
+          <span style="font-size:24px">🟢</span>
+          <div class="g4-bi"><span>EASY</span><span class="g4-bd">No limits • Relax &amp; play</span></div>
+        </button>
+        <button class="g4-hb g4-bn" onclick="g4_startDiff('normal')">
+          <span style="font-size:24px">🟡</span>
+          <div class="g4-bi"><span>NORMAL</span><span class="g4-bd">Beat the clock • Streak bonus</span></div>
+        </button>
+        <button class="g4-hb g4-bh" onclick="g4_startDiff('hard')">
+          <span style="font-size:24px">🟣</span>
+          <div class="g4-bi"><span>HARD</span><span class="g4-bd">Memorize first • Beat the clock</span></div>
+        </button>
+      </div>
+    </div>
+    <!-- WIN -->
+    <div class="g4-ww g4h" id="g4-wview">
+      <div class="g4-wt" id="g4-wtitle">🏆 WELL DONE!</div>
+      <div class="g4-we" id="g4-wemoji">🐾</div>
+      <div class="g4-ws" id="g4-wsub"></div>
+      <div class="g4-wsr">
+        <div class="g4-wstars" id="g4-wstars"></div>
+        <div class="g4-wsc" id="g4-wscore">0</div>
+        <div class="g4-wscl">SCORE</div>
+      </div>
+      <div class="g4-wbadges" id="g4-wbadges"></div>
+      <div class="g4-coin-reward" id="g4-wcoin"></div>
+      <div class="g4-wbtns">
+        <button class="g4-wb g4-wnxt" id="g4-wnxt" onclick="g4_nextLevel()">NEXT ▶</button>
+        <button class="g4-wb g4-whm" onclick="g4_goHome()">⌂ HOME</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// =====================================================================
+// COINS & REWARDS SYSTEM
+// Daily 500 coins = ₹5 value
+// Earn rate designed so user needs ~1-2 hrs gameplay + ads to hit 500
+// =====================================================================
+const DAILY_LIMIT  = 500;    // Max coins per day
+const REDEEM_AT    = 15000;  // Coins for ₹150 voucher (~30 days)
+const DAILY_AD_MAX = 10;     // Max rewarded videos per day
+
+// Coin values per action
+const COIN_MATH_CORRECT   = 1;   // Math Booster correct answer
+const COIN_SNAKE_CORRECT  = 2;   // Snake Math correct answer
+const COIN_VIDEO_AD       = 50;  // Rewarded video (main earner)
+const COIN_DAILY_LOGIN    = 10;  // Daily login bonus
+
+const Coins = {
+    d: { total:0, today:0, lastDate:'', streak:0, redeemed:0, adsToday:0 },
+
+    load() {
+        const s = localStorage.getItem('MA_COINS_V2');
+        if (s) this.d = JSON.parse(s);
+        const today = new Date().toDateString();
+        if (this.d.lastDate !== today) {
+            // New day — reset daily counters
+            const yesterday = new Date(Date.now()-86400000).toDateString();
+            this.d.streak = (this.d.lastDate === yesterday) ? this.d.streak + 1 : 1;
+            this.d.today = 0;
+            this.d.adsToday = 0;
+            this.d.lastDate = today;
+            this.save();
+            // Daily login bonus only after first saved day
+            if (s) {
+                this._forceAdd(COIN_DAILY_LOGIN);
+                showToast(`🎁 Daily Login Bonus! +${COIN_DAILY_LOGIN} 🪙`);
+            }
+        }
+        this.refreshUI();
+    },
+
+    save() { localStorage.setItem('MA_COINS_V2', JSON.stringify(this.d)); },
+
+    // Normal add — respects daily limit
+    add(amt, msg) {
+        if (!window._adsEnabled) return 0;  // Ads OFF = no coins
+        if (this.d.today >= DAILY_LIMIT) {
+            showDailyLimit(); return 0;
+        }
+        const actual = Math.min(amt, DAILY_LIMIT - this.d.today);
+        this.d.total += actual;
+        this.d.today += actual;
+        this.save(); this.refreshUI();
+        if (msg) showToast(`🪙 +${actual} ${msg}`);
+        sendToKodular(`COINS_UPDATE|${this.d.total}|${this.d.today}`);
+        if (this.d.today >= DAILY_LIMIT) showDailyLimit();
+        return actual;
+    },
+
+    // Force add — bypasses limit (login bonus, etc.)
+    _forceAdd(amt) {
+        if (!window._adsEnabled) return;  // Ads OFF = no daily bonus
+        this.d.total += amt; this.save(); this.refreshUI();
+        sendToKodular(`COINS_UPDATE|${this.d.total}|${this.d.today}`);
+    },
+
+    refreshUI() {
+        const t = this.d.total;
+        // Coins bar
+        document.getElementById('cb-coins').innerText = t.toLocaleString();
+        // Daily bar
+        const pct = Math.min((this.d.today / DAILY_LIMIT) * 100, 100);
+        document.getElementById('daily-fill').style.width = pct + '%';
+        document.getElementById('daily-val').innerText = `${this.d.today} / ${DAILY_LIMIT}`;
+        // Wallet
+        document.getElementById('w-total').innerText = t.toLocaleString();
+        document.getElementById('w-today').innerText = this.d.today;
+        document.getElementById('w-left').innerText  = Math.max(0, DAILY_LIMIT - this.d.today);
+        document.getElementById('w-streak').innerText  = this.d.streak;
+        document.getElementById('w-redeemed').innerText = this.d.redeemed;
+        document.getElementById('wp-coins').innerText   = t.toLocaleString() + ' coins';
+        document.getElementById('w-redeem-coins').innerText = t.toLocaleString();
+        document.getElementById('wp-fill').style.width = Math.min((t / REDEEM_AT)*100, 100) + '%';
+        // Redeem button
+        const btn = document.getElementById('redeem-btn');
+        if (t >= REDEEM_AT) {
+            btn.className = 'redeem-btn active';
+            btn.innerText = '🎁 Redeem ₹150 Voucher!';
+        } else {
+            btn.className = 'redeem-btn locked';
+            btn.innerText = `🔒 Need ${(REDEEM_AT - t).toLocaleString()} more coins`;
+        }
+    }
+};
+
+// Toast
+let _toastT = null;
+function showToast(msg, color='#f0b90b') {
+    const el = document.getElementById('coin-toast');
+    el.innerText = msg; el.style.borderColor = color; el.style.color = color;
+    el.style.display='block'; el.style.animation='none';
+    el.offsetHeight;
+    el.style.animation='toastAnim 2.5s ease forwards';
+    if (_toastT) clearTimeout(_toastT);
+    _toastT = setTimeout(()=>{ el.style.display='none'; }, 2600);
+}
+
+// Daily limit screen + countdown timer
+let _dlInterval = null;
+function showDailyLimit() {
+    document.getElementById('daily-limit-screen').style.display = 'flex';
+    if (_dlInterval) clearInterval(_dlInterval);
+    _dlInterval = setInterval(() => {
+        const now = new Date();
+        const midnight = new Date(); midnight.setHours(24,0,0,0);
+        const diff = midnight - now;
+        const h = String(Math.floor(diff/3600000)).padStart(2,'0');
+        const m = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+        const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+        document.getElementById('dl-timer').innerText = `${h}:${m}:${s}`;
+    }, 1000);
+}
+function hideDailyLimit() {
+    document.getElementById('daily-limit-screen').style.display = 'none';
+    if (_dlInterval) clearInterval(_dlInterval);
+}
+
+// Wallet
+function openWallet()  { Coins.refreshUI(); document.getElementById('wallet-screen').style.display='flex'; }
+function closeWallet() { document.getElementById('wallet-screen').style.display='none'; }
+
+// Watch Video Ad
+let _adCooldown = false;
+function watchVideoAd_OLD_REMOVED() {
+    if (_adCooldown) { showToast('⏳ Please wait...','#6b7280'); return; }
+    if (Coins.d.adsToday >= DAILY_AD_MAX) { showToast('📵 Max 10 videos/day!','#f23645'); return; }
+    if (Coins.d.today >= DAILY_LIMIT) { showDailyLimit(); return; }
+    // Signal Kodular to show rewarded ad
+    // When ad completes, Kodular calls: AppInventor.setWebViewString("AD_COMPLETE")
+    // Which triggers onAdComplete() below
+    sendToKodular('SHOW_REWARDED_AD');
+    showToast('⏳ Loading video...','#6b7280');
+    _adCooldown = true;
+    setTimeout(()=>{ _adCooldown=false; }, 3000);
+}
+// Called from Kodular after rewarded ad fully watched
+function onAdComplete() {
+    Coins.d.adsToday++;
+    Coins.save();
+    Coins.add(COIN_VIDEO_AD, 'Video watched! ▶️');
+}
+
+// Redeem
+function openRedeemForm() {
+    if (Coins.d.total < REDEEM_AT) return;
+    closeWallet();
+    document.getElementById('redeem-form').style.display = 'flex';
+}
+function closeRedeemForm() {
+    document.getElementById('redeem-form').style.display = 'none';
+    openWallet();
+}
+function submitRedeem() {
+    // Opens the Google Form (Voucher Claim) in the external browser
+    window.open('https://forms.gle/54nCWvAaW4uU7bqR6', '_blank');
+}
+
+// Show/hide watch ad button
+function _showAdBtn(v) { const btn=document.getElementById("watch-ad-btn"); if(btn) btn.style.display=v?"flex":"none"; }
+
+// Block game if daily limit hit
+function _checkDailyBlock() {
+    if (Coins.d.today >= DAILY_LIMIT) { showDailyLimit(); return true; }
+    return false;
+}
+// =====================================================================
+
+// Floating particles
+(function() {
+    // Initialize coins system on app start
+    Coins.load();
+    _updateAdsToggleUI();
+
+    const container = document.getElementById('particles');
+    const colors = ['#00f3ff', '#a855f7', '#39ff14', '#f0b90b'];
+    for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 6 + 2;
+        p.style.cssText = `
+            width:${size}px; height:${size}px;
+            left:${Math.random()*100}%;
+            background:${colors[Math.floor(Math.random()*colors.length)]};
+            animation-duration:${Math.random()*15+8}s;
+            animation-delay:${Math.random()*10}s;
+        `;
+        container.appendChild(p);
+    }
+})();
+
+let g2_animationId = null;
+let g2_timerIntervalId = null;
+
+function loadGame(num) {
+    if (_checkDailyBlock()) return;
+    document.body.classList.add('in-game'); // Coins bar लपवा
+    document.getElementById('home-screen').style.display = 'none';
+    document.getElementById('back-btn').style.display = 'block';
+    if (num === 1) {
+        document.getElementById('game1-container').style.display = 'block';
+        g1_init();
+    } else if (num === 2) {
+        document.getElementById('game2-container').style.display = 'block';
+        g2_init();
+    } else if (num === 3) {
+        document.getElementById('game3-container').style.display = 'block';
+        g3_onOpen();
+    } else if (num === 4) {
+        document.getElementById('game4-container').style.display = 'block';
+        g4_onOpen();
+    }
+    if (Coins.d.today < DAILY_LIMIT && Coins.d.adsToday < DAILY_AD_MAX) _showAdBtn(true);
+}
+
+function goHome() {
+    document.body.classList.remove('in-game'); // Coins bar दाखवा
+    AudioEngine.stopG1Music();
+    AudioEngine.stopG2Music();
+    _showAdBtn(false);
+    document.getElementById('game1-container').style.display = 'none';
+    if (g2_animationId) { cancelAnimationFrame(g2_animationId); g2_animationId = null; }
+    if (g2_timerIntervalId) { clearInterval(g2_timerIntervalId); g2_timerIntervalId = null; }
+    document.getElementById('game2-container').style.display = 'none';
+    // Stop game3 (Emoji Spelling)
+    if (typeof g3_timerInt !== 'undefined' && g3_timerInt) { clearInterval(g3_timerInt); g3_timerInt = null; }
+    if (typeof g3_afr !== 'undefined' && g3_afr) { cancelAnimationFrame(g3_afr); g3_afr = null; }
+    document.getElementById('game3-container').style.display = 'none';
+    // Stop game4 (Memory Match)
+    if (typeof g4_timerInt !== 'undefined' && g4_timerInt) { clearInterval(g4_timerInt); g4_timerInt = null; }
+    if (typeof g4_afr !== 'undefined' && g4_afr) { cancelAnimationFrame(g4_afr); g4_afr = null; }
+    document.getElementById('game4-container').style.display = 'none';
+    document.getElementById('home-screen').style.display = 'flex';
+    document.getElementById('back-btn').style.display = 'none';
+}
+
+// ── Ads Toggle ──────────────────────────────────────
+window._adsEnabled = true;
+
+function setAdsEnabled(enabled) {
+    window._adsEnabled = (enabled === true || enabled === "true");
+    _updateAdsToggleUI();
+    const btn = document.getElementById("watch-ad-btn");
+    if (btn) btn.style.display = window._adsEnabled ? "flex" : "none";
+    if (!window._adsEnabled) {
+        showToast("Ads OFF - Enjoy ad-free gaming! 🎮", "#6b7280");
+    }
+}
+
+function _updateAdsToggleUI() {
+    const toggleBtn = document.getElementById("ads-toggle-btn");
+    const toggleKnob = document.getElementById("ads-toggle-knob");
+    const toggleTitle = document.getElementById("ads-toggle-title");
+    const toggleIcon = document.getElementById("ads-toggle-icon");
+    const toggleDesc = document.getElementById("ads-toggle-desc");
+    if (!toggleBtn) return;
+    if (window._adsEnabled) {
+        toggleBtn.style.background = "#f0b90b";
+        toggleKnob.style.right = "3px";
+        toggleKnob.style.left = "auto";
+        toggleTitle.textContent = "ADS & REWARDS ON";
+        toggleTitle.style.color = "#f0b90b";
+        toggleIcon.textContent = "🪙";
+        toggleDesc.textContent = "BUTTON OFF = NO COINS · NO REWARDS · NO VOUCHERS";
+    } else {
+        toggleBtn.style.background = "#374151";
+        toggleKnob.style.left = "3px";
+        toggleKnob.style.right = "auto";
+        toggleTitle.textContent = "ADS & REWARDS OFF";
+        toggleTitle.style.color = "#6b7280";
+        toggleIcon.textContent = "🚫";
+        toggleDesc.textContent = "BUTTON OFF = NO COINS · NO REWARDS · NO VOUCHERS";
+    }
+}
+
+function toggleAdsFromHome() {
+    window._adsEnabled = !window._adsEnabled;
+    _updateAdsToggleUI();
+    const btn = document.getElementById("watch-ad-btn");
+    if (btn) btn.style.display = window._adsEnabled ? "flex" : "none";
+    sendToKodular(window._adsEnabled ? "ADS_ENABLED" : "ADS_DISABLED");
+    if (!window._adsEnabled) {
+        showToast("Ads OFF - Enjoy ad-free gaming! 🎮", "#6b7280");
+    } else {
+        showToast("Ads ON - Earn coins & rewards! 🪙", "#f0b90b");
+    }
+}
+
+function watchVideoAd() {
+    if (!window._adsEnabled) { showToast("Enable Ads to earn coins! 🪙", "#f23645"); return; }
+    if (_adCooldown) { showToast('⏳ Please wait...','#6b7280'); return; }
+    if (Coins.d.adsToday >= DAILY_AD_MAX) { showToast('📵 Max 10 videos/day!','#f23645'); return; }
+    if (Coins.d.today >= DAILY_LIMIT) { showDailyLimit(); return; }
+    sendToKodular('SHOW_REWARDED_AD');
+    showToast('⏳ Loading video...','#6b7280');
+    _adCooldown = true;
+    setTimeout(()=>{ _adCooldown=false; }, 3000);
+}
+
+function sendToKodular(val) {
+    if (window.AppInventor) window.AppInventor.setWebViewString(val);
+}
+
+// ===================== AUDIO ENGINE =====================
+const AudioEngine = {
+    ctx: null,
+    g1_bgNode: null,
+    g2_bgNode: null,
+    g1_bgGain: null,
+    g2_bgGain: null,
+
+    init() {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    },
+
+    // --- Game 1: Happy/Bright Background Music ---
+    startG1Music() {
+        this.init();
+        if (this.g1_bgNode) return;
+        const ctx = this.ctx;
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.18;
+        masterGain.connect(ctx.destination);
+        this.g1_bgGain = masterGain;
+
+        // Simple cheerful melody loop using oscillators
+        const notes = [523, 659, 784, 659, 523, 392, 440, 523];
+        let noteIdx = 0;
+        const playNote = () => {
+            if (!this.g1_bgNode) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = notes[noteIdx % notes.length];
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+            osc.connect(gain); gain.connect(masterGain);
+            osc.start(); osc.stop(ctx.currentTime + 0.38);
+            noteIdx++;
+            this.g1_bgNode = setTimeout(playNote, 380);
+        };
+        this.g1_bgNode = setTimeout(playNote, 100);
+    },
+
+    stopG1Music() {
+        if (this.g1_bgNode) { clearTimeout(this.g1_bgNode); this.g1_bgNode = null; }
+    },
+
+    // --- Game 2: Retro Adventure Background Music ---
+    startG2Music() {
+        this.init();
+        if (this.g2_bgNode) return;
+        const ctx = this.ctx;
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.32;
+        masterGain.connect(ctx.destination);
+        this.g2_bgGain = masterGain;
+
+        // Warm bass line — retro feel
+        const bassNotes = [110, 110, 138, 110, 130, 110, 98, 110];
+        let bassIdx = 0;
+        const bassOscs = [];
+        const playBass = () => {
+            if (!this.g2_bgNode) return;
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = bassNotes[bassIdx % bassNotes.length];
+            g.gain.setValueAtTime(0.18, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.38);
+            osc.connect(g); g.connect(masterGain);
+            osc.start(); osc.stop(ctx.currentTime + 0.42);
+            bassIdx++;
+            this._g2_bassTimer = setTimeout(playBass, 420);
+        };
+
+        // Catchy retro melody — 8-bit adventure feel
+        const melody = [392, 440, 523, 440, 392, 349, 392, 0, 523, 587, 659, 587, 523, 440, 523, 0];
+        let melIdx = 0;
+        const playMelody = () => {
+            if (!this.g2_bgNode) return;
+            const freq = melody[melIdx % melody.length];
+            if (freq > 0) {
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                g.gain.setValueAtTime(0.10, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+                osc.connect(g); g.connect(masterGain);
+                osc.start(); osc.stop(ctx.currentTime + 0.21);
+            }
+            melIdx++;
+            this._g2_melTimer = setTimeout(playMelody, 210);
+        };
+
+        playBass();
+        playMelody();
+        this.g2_bgNode = true; // active flag
+        this._g2_drone = null;
+        this._g2_lfo = null;
+        this._g2_whine = null;
+        this._g2_whineLfo = null;
+    },
+
+    stopG2Music() {
+        this.g2_bgNode = null;
+        if (this._g2_bassTimer) { clearTimeout(this._g2_bassTimer); this._g2_bassTimer = null; }
+        if (this._g2_melTimer)  { clearTimeout(this._g2_melTimer);  this._g2_melTimer = null; }
+        try { if(this._g2_drone) this._g2_drone.stop(); } catch(e){}
+        try { if(this._g2_whine) this._g2_whine.stop(); } catch(e){}
+        try { if(this._g2_whineLfo) this._g2_whineLfo.stop(); } catch(e){}
+    },
+
+    // --- Game 1 Sounds ---
+    g1_correct() {
+        this.init();
+        const ctx = this.ctx;
+        // Happy ascending chime
+        [523, 659, 784, 1047].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            g.gain.setValueAtTime(0, ctx.currentTime + i*0.08);
+            g.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i*0.08 + 0.04);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.08 + 0.25);
+            osc.connect(g); g.connect(ctx.destination);
+            osc.start(ctx.currentTime + i*0.08);
+            osc.stop(ctx.currentTime + i*0.08 + 0.3);
+        });
+    },
+
+    g1_wrong() {
+        this.init();
+        const ctx = this.ctx;
+        // Buzzer down sound
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.4);
+        g.gain.setValueAtTime(0.35, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.5);
+    },
+
+    g1_timeout() {
+        this.init();
+        const ctx = this.ctx;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 150;
+        g.gain.setValueAtTime(0.2, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.35);
+    },
+
+    // --- Memory Game Background Music ---
+    startMemMusic() {
+        this.init();
+        if (this._memBgNode) return;
+        const ctx = this.ctx;
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.25;
+        masterGain.connect(ctx.destination);
+        this._memBgGain = masterGain;
+
+        // Ambient mystical pad
+        const padFreqs = [174, 220, 261, 349];
+        padFreqs.forEach(freq => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            g.gain.value = 0.06;
+            osc.connect(g); g.connect(masterGain);
+            osc.start();
+            this._memPads = this._memPads || [];
+            this._memPads.push(osc);
+        });
+
+        // Gentle sparkle arpeggio
+        const sparkleNotes = [523, 659, 784, 1047, 880, 698, 587, 523];
+        let sIdx = 0;
+        const playSparkle = () => {
+            if (!this._memBgNode) {
+                (this._memPads||[]).forEach(o => { try{ o.stop(); }catch(e){} });
+                this._memPads = [];
+                return;
+            }
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = sparkleNotes[sIdx % sparkleNotes.length];
+            g.gain.setValueAtTime(0.0, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.08);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.connect(g); g.connect(masterGain);
+            osc.start(); osc.stop(ctx.currentTime + 0.55);
+            sIdx++;
+            this._memBgNode = setTimeout(playSparkle, 480);
+        };
+        this._memBgNode = setTimeout(playSparkle, 200);
+    },
+
+    stopMemMusic() {
+        if (this._memBgNode) { clearTimeout(this._memBgNode); this._memBgNode = null; }
+        (this._memPads||[]).forEach(o => { try{ o.stop(); }catch(e){} });
+        this._memPads = [];
+    },
+
+    // --- Memory Correct Sound ---
+    mem_correct() {
+        this.init();
+        const ctx = this.ctx;
+        // Magical sparkle ascending
+        [523, 784, 1047, 1568].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const g = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            g.gain.setValueAtTime(0, ctx.currentTime + i*0.1);
+            g.gain.linearRampToValueAtTime(0.35, ctx.currentTime + i*0.1 + 0.05);
+            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i*0.1 + 0.3);
+            osc.connect(g); g.connect(ctx.destination);
+            osc.start(ctx.currentTime + i*0.1);
+            osc.stop(ctx.currentTime + i*0.1 + 0.35);
+        });
+    },
+
+    // --- Memory Wrong Sound ---
+    mem_wrong() {
+        this.init();
+        const ctx = this.ctx;
+        // Descending buzz
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.5);
+        g.gain.setValueAtTime(0.4, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.6);
+    }
+};
+// =========================================================
+
+// ===================== GAME 1 LOGIC =====================
+let g1 = { marks:0, level:1, qCount:0, mode:'easy', target:0, falling:0, y:-150, speed:0.6, timer:150, isPaused:false, operator:'+', memLevel:1, memSet:1, currentWord:"", isMemoryActive:false, rafId:null };
+
+function g1_init() {
+    g1 = { marks:0, level:1, qCount:0, mode:'easy', target:0, falling:0, y:-150, speed:0.6, timer:150, isPaused:false, operator:'+', memLevel:1, memSet:1, currentWord:"", isMemoryActive:false, rafId:null };
+    document.getElementById('menu').style.display = 'flex';
+    document.getElementById('game-ui').style.display = 'none';
+    document.getElementById('info-screen').style.display = 'none';
+    document.getElementById('victory-screen').style.display = 'none';
+    
+}
+
+function g1_selectMode(m) {
+    g1.mode = m; g1.isMemoryActive = false;
+    g1.speed = m==='easy' ? 0.6 : (m==='normal' ? 0.65 : 0.7);
+    document.getElementById('menu').style.display = 'none';
+    sendToKodular("bg_start");
+    AudioEngine.startG1Music();
+    g1_showInfo();
+}
+
+function g1_showInfo() {
+    document.getElementById('victory-screen').style.display = 'none';
+    let opCycle = (g1.level - 1) % 4;
+    let opNames = ["ADDITION","SUBTRACTION","MULTIPLICATION","DIVISION"];
+    let symbols = ["+","-","×","÷"], opKeys = ["+","-","*","/"];
+    g1.operator = opKeys[opCycle];
+    document.getElementById('info-lvl-title').innerText = "LEVEL " + g1.level;
+    document.getElementById('info-op').innerText = symbols[opCycle];
+    document.getElementById('info-op-text').innerText = opNames[opCycle];
+    document.getElementById('op-helper').innerText = symbols[opCycle];
+    document.getElementById('info-screen').style.display = 'flex';
+    document.getElementById('game-ui').style.display = 'none';
+}
+
+function g1_startGame() {
+    document.getElementById('info-screen').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'block';
+    g1_nextQ();
+    if (g1.level===1 && g1.qCount===0) requestAnimationFrame(g1_update);
+}
+
+function g1_nextQ() {
+    g1.isPaused = false; g1.y = -150; g1.timer = 150;
+    let range = (g1.mode==='easy') ? 5+(g1.level*2) : (g1.mode==='normal' ? 20+(g1.level*5) : 50+(g1.level*10));
+    let ans = 0;
+    if(g1.operator==='+') {
+        g1.target=Math.floor(Math.random()*range)+10;
+        g1.falling=Math.floor(Math.random()*(range/2))+1;
+        ans = g1.target - g1.falling;
+    } else if(g1.operator==='-') {
+        g1.falling=Math.floor(Math.random()*range)+10;
+        ans=Math.floor(Math.random()*(range/2))+1;
+        g1.target=g1.falling - ans;
+    } else if(g1.operator==='*') {
+        let limit=(g1.mode==='easy')?5:12;
+        g1.falling=Math.floor(Math.random()*limit)+2;
+        ans=Math.floor(Math.random()*limit)+2;
+        g1.target=g1.falling * ans;
+    } else {
+        let limit=(g1.mode==='easy')?5:10;
+        ans=Math.floor(Math.random()*limit)+2;
+        g1.target=Math.floor(Math.random()*5)+2;
+        g1.falling=ans * g1.target;
+    }
+    document.getElementById('goal-txt').innerText = g1.target;
+    // दर वेळी pot आणि water चा रंग बदलतो
+    const potColors = [
+        { water: 'rgba(0,243,255,0.55)',  border: '#00f3ff', shadow: '0 0 18px rgba(0,243,255,0.6)' },
+        { water: 'rgba(57,255,20,0.55)',  border: '#39ff14', shadow: '0 0 18px rgba(57,255,20,0.6)' },
+        { water: 'rgba(168,85,247,0.55)', border: '#a855f7', shadow: '0 0 18px rgba(168,85,247,0.6)' },
+        { water: 'rgba(240,185,11,0.55)', border: '#f0b90b', shadow: '0 0 18px rgba(240,185,11,0.6)' },
+        { water: 'rgba(255,107,53,0.55)', border: '#ff6b35', shadow: '0 0 18px rgba(255,107,53,0.6)' },
+        { water: 'rgba(0,255,170,0.55)',  border: '#00ffaa', shadow: '0 0 18px rgba(0,255,170,0.6)' },
+        { water: 'rgba(255,7,58,0.55)',   border: '#ff073a', shadow: '0 0 18px rgba(255,7,58,0.6)' },
+        { water: 'rgba(255,230,0,0.55)',  border: '#ffe600', shadow: '0 0 18px rgba(255,230,0,0.6)' },
+    ];
+    const pc = potColors[Math.floor(Math.random() * potColors.length)];
+    const waveEl = document.getElementById('water-level');
+    const potEl = document.getElementById('glass-pot');
+    if (waveEl) waveEl.style.background = pc.water;
+    if (potEl) { potEl.style.border = `2px solid ${pc.border}`; potEl.style.boxShadow = pc.shadow; }
+    const ballEl = document.getElementById('ball-val');
+    ballEl.innerText = g1.falling;
+    ballEl.style.color = '#ffffff';
+    ballEl.style.textShadow = '0 0 12px rgba(255,255,255,0.8)';
+    document.getElementById('lvl-txt').innerText = g1.level;
+    ans = parseInt(ans);
+    if (isNaN(ans) || ans <= 0) ans = 1;
+    let opts = [ans];
+    let att = 0;
+    // Robust decoy generation — range based on ans value itself
+    const decoyBase = Math.max(Math.abs(ans), Math.abs(g1.target), 5);
+    while(opts.length < 4 && att < 200) {
+        att++;
+        let delta = Math.floor(Math.random() * decoyBase) + 1;
+        let r = (Math.random() < 0.5) ? ans + delta : Math.abs(ans - delta) + 1;
+        r = Math.max(1, r);
+        if(!opts.includes(r)) opts.push(r);
+    }
+    // Safety fallback — if still not 4, just add sequential
+    while(opts.length < 4) { opts.push(opts[opts.length-1] + 1); }
+    opts.sort(()=>Math.random()-0.5);
+    document.querySelectorAll('.ans-btn').forEach((b,i) => { b.innerText=opts[i]; b.className="ans-btn"; b.disabled=false; });
+}
+
+function g1_check(btn) {
+    if(g1.isPaused) return; g1.isPaused = true;
+    document.querySelectorAll('.ans-btn').forEach(b => b.disabled=true);
+    let val = parseInt(btn.innerText);
+    let isCorrect = (g1.operator==='+'&&val+g1.falling===g1.target)||(g1.operator==='-'&&g1.falling-val===g1.target)||(g1.operator==='*'&&g1.falling*val===g1.target)||(g1.operator==='/'&&g1.falling/val===g1.target);
+    if(isCorrect) {
+        g1.marks+=10; g1.qCount++; btn.classList.add('correct-neon');
+        AudioEngine.g1_correct(); sendToKodular("clap");
+        Coins.add(COIN_MATH_CORRECT, 'Correct! ✅');
+        if(g1.qCount>=5) { g1.level++; g1.qCount=0; setTimeout(g1_showVictory,1000); } else { setTimeout(g1_nextQ,1000); }
+    } else {
+        g1.marks-=5; btn.classList.add('wrong-neon');
+        AudioEngine.g1_wrong(); sendToKodular("boo"); setTimeout(g1_nextQ,1000);
+    }
+    document.getElementById('marks-txt').innerText = g1.marks;
+}
+
+function g1_showVictory() {
+    sendToKodular('LEVEL_COMPLETE');
+    document.getElementById('game-ui').style.display = 'none';
+    document.getElementById('victory-screen').style.display = 'flex';
+    document.getElementById('marks-val-txt').innerText = g1.marks;
+    document.getElementById('cheque-amt').innerText = g1.marks;
+    let nextBtn = document.getElementById('next-btn');
+    if(g1.isMemoryActive) { nextBtn.onclick=()=>{ document.getElementById('victory-screen').style.display='none'; g1_generateMemorySet(); }; }
+    else { nextBtn.onclick=()=>g1_showInfo(); }
+}
+
+function g1_update() {
+    if(document.getElementById('game1-container').style.display==='none') return;
+    if(!g1.isPaused && document.getElementById('game-ui').style.display==='block') {
+        g1.y+=g1.speed; g1.timer-=(g1.speed/4.5);
+        document.getElementById('pot-container').style.top = g1.y+"px";
+        document.getElementById('water-level').style.top = (100-(g1.timer/1.5))+"%";
+        document.getElementById('timer-box').innerText = Math.ceil(g1.timer/10)+"s";
+        if(g1.timer<=0||g1.y>window.innerHeight*0.65) { g1.marks-=2; AudioEngine.g1_timeout(); sendToKodular("boo"); g1_nextQ(); }
+    }
+    requestAnimationFrame(g1_update);
+}
+
+
+
+function g1_generateMemorySet() {
+    
+    document.getElementById('recall-area').style.display='none';
+    const dispArea = document.getElementById('display-area');
+    dispArea.style.display='block';
+    dispArea.classList.remove('blurring');
+    document.getElementById('correct-reveal').style.display='none';
+    document.getElementById('mem-set').innerText=g1.memSet+"/5";
+    document.getElementById('mem-lvl').innerText=g1.memLevel;
+    let totalLength=(g1.memLevel>10)?5:4;
+    let digits="0123456789", letters="ABCDEFGHJKLMNPQRSTUVWXYZ";
+    let pool=[];
+    pool.push(digits[Math.floor(Math.random()*digits.length)]);
+    pool.push(digits[Math.floor(Math.random()*digits.length)]);
+    while(pool.length<totalLength){ pool.push(letters[Math.floor(Math.random()*letters.length)]); }
+    g1.currentWord=pool.sort(()=>Math.random()-0.5).join('');
+    dispArea.innerText=g1.currentWord;
+    // 1.2s दाखवा, मग blur होऊन नाहीसा होतो
+    setTimeout(()=>{
+        dispArea.classList.add('blurring');
+        setTimeout(()=>{ dispArea.style.display='none'; g1_showRecallOptions(); }, 800);
+    }, 1200);
+}
+
+function g1_showRecallOptions() {
+    let grid=document.getElementById('mem-button-grid');
+    document.getElementById('recall-area').style.display='block';
+    grid.innerHTML="";
+    let options=[g1.currentWord];
+    while(options.length<4){ let fake=g1.currentWord.split('').sort(()=>Math.random()-0.5).join(''); if(!options.includes(fake)) options.push(fake); }
+    options.sort(()=>Math.random()-0.5);
+    options.forEach(opt=>{
+        let btn=document.createElement('button');
+        btn.className="ans-btn"; btn.style.fontSize="22px"; btn.innerText=opt;
+        btn.onclick=()=>{
+            document.getElementById('actual-word').innerText=g1.currentWord;
+            document.getElementById('correct-reveal').style.display='block';
+            if(opt===g1.currentWord){ g1.marks+=10; btn.classList.add('correct-neon'); AudioEngine.mem_correct(); sendToKodular("clap"); Coins.add(COIN_MEMORY_CORRECT, 'Memory! 🧠'); }
+            else { g1.marks-=5; btn.classList.add('wrong-neon'); AudioEngine.mem_wrong(); sendToKodular("boo"); }
+            document.getElementById('mem-marks-txt').innerText=g1.marks;
+            setTimeout(()=>{ g1.memSet++; if(g1.memSet>5){g1.memLevel++;g1.memSet=1;g1_showVictory();}else{g1_generateMemorySet();} },1800);
+        };
+        grid.appendChild(btn);
+    });
+}
+
+// ===================== GAME 2 LOGIC =====================
+let g2 = {};
+
+function g2_init() {
+    const canvas = document.getElementById('gameCanvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    g2 = {
+        canvas, ctx: canvas.getContext('2d'),
+        currentLevel:1, score:0, lives:5, gameActive:false,
+        n1:0, n2:0, correctAnswer:0, currentOp:'+',
+        questionTimer:10, rangeLimit:50, audioCtx:null,
+        snake: {
+            x:window.innerWidth/2, y:window.innerHeight/2,
+            radius:20, angle:-Math.PI/2, targetAngle:-Math.PI/2,
+            speed:2.3, turnSpeed:0.12, history:[], tailLength:60, color:'#00f3ff'
+        },
+        options:[]
+    };
+
+    document.getElementById('mode-select-modal').style.display = 'flex';
+    document.getElementById('ui').style.display = 'none';
+    document.getElementById('math-display').style.display = 'none';
+    document.getElementById('op-popup').style.display = 'none';
+    document.getElementById('level-modal').style.display = 'none';
+    document.getElementById('over-modal').style.display = 'none';
+
+    document.getElementById('g2-lvl-txt').innerText = '1';
+    document.getElementById('g2-score-txt').innerText = '0';
+    document.getElementById('g2-life-txt').innerText = '5';
+
+    // Touch/Mouse handlers
+    const handleInput = (e) => {
+        if(!g2.gameActive) return;
+        let cx = e.touches ? e.touches[0].clientX : e.clientX;
+        let cy = e.touches ? e.touches[0].clientY : e.clientY;
+        g2.snake.targetAngle = Math.atan2(cy-g2.snake.y, cx-g2.snake.x);
+    };
+    document.getElementById('g2-wrap').addEventListener('touchstart', handleInput);
+    document.getElementById('g2-wrap').addEventListener('touchmove', handleInput);
+    document.getElementById('g2-wrap').addEventListener('mousemove', handleInput);
+
+    g2_sparkParts = [];
+    g2_animationId = requestAnimationFrame(g2_draw);
+}
+
+function g2_restart() {
+    if(g2_animationId) cancelAnimationFrame(g2_animationId);
+    if(g2_timerIntervalId) clearInterval(g2_timerIntervalId);
+    g2_init();
+}
+
+function g2_setDifficulty(mode) {
+    if(!g2.audioCtx) g2.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(mode==='easy') g2.rangeLimit=50;
+    else if(mode==='normal') g2.rangeLimit=100;
+    else g2.rangeLimit=200;
+    document.getElementById('mode-select-modal').style.display='none';
+    document.getElementById('ui').style.display='flex';
+    document.getElementById('math-display').style.display='block';
+    AudioEngine.startG2Music();
+    g2_initLevelLogic();
+}
+
+function g2_initLevelLogic() {
+    g2.gameActive=true;
+    if(g2.currentLevel<=3) g2.currentOp='+';
+    else if(g2.currentLevel<=6) g2.currentOp='-';
+    else if(g2.currentLevel<=9) g2.currentOp='/';
+    else g2.currentOp='*';
+    document.getElementById('op-txt').innerText=g2.currentOp;
+    g2_generateQuestion();
+    g2_startQuestionTimer();
+}
+
+function g2_advanceLevel() {
+    document.getElementById('level-modal').style.display='none';
+    // Tail grows by 15 each level
+    g2.snake.tailLength += 15;
+    let showPopup=false, title="", desc="";
+    if(g2.currentLevel===3){title="SUBTRACTION PHASE";desc="Focus! Numbers are going to decrease.";showPopup=true;}
+    else if(g2.currentLevel===6){title="DIVISION PHASE";desc="Calculate the divisor carefully!";showPopup=true;}
+    else if(g2.currentLevel===9){title="MULTIPLICATION PHASE";desc="Master the tables!";showPopup=true;}
+    if(showPopup){
+        document.getElementById('op-title').innerText=title;
+        document.getElementById('op-desc').innerText=desc;
+        document.getElementById('op-popup').style.display='flex';
+        g2.gameActive=false;
+    } else {
+        g2.currentLevel++;
+        document.getElementById('g2-lvl-txt').innerText=g2.currentLevel;
+        g2_initLevelLogic();
+    }
+}
+
+function openPrivacyPolicy() {
+    document.getElementById('privacy-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+function closePrivacyPolicy() {
+    document.getElementById('privacy-modal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function g2_closeOpPopup() {
+    document.getElementById('op-popup').style.display='none';
+    g2.currentLevel++;
+    document.getElementById('g2-lvl-txt').innerText=g2.currentLevel;
+    g2_initLevelLogic();
+}
+
+function g2_generateQuestion() {
+    let currentRange = g2.rangeLimit+(g2.currentLevel*5);
+    if(g2.currentOp==='+'){g2.correctAnswer=Math.floor(Math.random()*(currentRange/2))+5;g2.n1=Math.floor(Math.random()*(currentRange-g2.correctAnswer));g2.n2=g2.n1+g2.correctAnswer;}
+    else if(g2.currentOp==='-'){g2.n1=Math.floor(Math.random()*(currentRange/2))+(currentRange/4);g2.correctAnswer=Math.floor(Math.random()*(g2.n1-2))+1;g2.n2=g2.n1-g2.correctAnswer;}
+    else if(g2.currentOp==='/'){g2.correctAnswer=Math.floor(Math.random()*9)+2;g2.n2=Math.floor(Math.random()*9)+2;g2.n1=g2.n2*g2.correctAnswer;}
+    else{g2.n1=Math.floor(Math.random()*9)+2;g2.correctAnswer=Math.floor(Math.random()*9)+2;g2.n2=g2.n1*g2.correctAnswer;}
+    document.getElementById('n1').innerText=g2.n1;
+    document.getElementById('n2').innerText=g2.n2;
+    g2.options=[];
+    g2.options.push(g2_createOption(g2.correctAnswer,true));
+    for(let i=0;i<3;i++){let wrong=g2.correctAnswer+(Math.floor(Math.random()*10)-5);if(wrong===g2.correctAnswer||wrong<=0)wrong=g2.correctAnswer+i+2;g2.options.push(g2_createOption(wrong,false));}
+    g2.questionTimer=10;
+    document.getElementById('timer-txt').innerText=g2.questionTimer;
+}
+
+function g2_createOption(val,isCorrect) {
+    return {x:Math.random()*(g2.canvas.width-120)+60, y:Math.random()*(g2.canvas.height-300)+250, val, isCorrect, vx:(Math.random()-0.5)*1.0, vy:(Math.random()-0.5)*1.0, state:'normal'};
+}
+
+function g2_startQuestionTimer() {
+    if(g2_timerIntervalId) clearInterval(g2_timerIntervalId);
+    g2_timerIntervalId = setInterval(()=>{
+        if(g2.gameActive){
+            g2.questionTimer--;
+            document.getElementById('timer-txt').innerText=g2.questionTimer;
+            if(g2.questionTimer<=0){g2_playSound('BUZZER');g2_generateQuestion();}
+        }
+    },1000);
+}
+
+function g2_playSound(type) {
+    if(!g2.audioCtx) return;
+    const osc=g2.audioCtx.createOscillator(), gain=g2.audioCtx.createGain();
+    if(type==='RIGHT'){osc.frequency.setValueAtTime(800,g2.audioCtx.currentTime);gain.gain.setValueAtTime(0.2,g2.audioCtx.currentTime);}
+    else if(type==='BUZZER'){osc.type='sawtooth';osc.frequency.setValueAtTime(120,g2.audioCtx.currentTime);gain.gain.setValueAtTime(0.1,g2.audioCtx.currentTime);}
+    else{osc.type='square';osc.frequency.setValueAtTime(150,g2.audioCtx.currentTime);osc.frequency.exponentialRampToValueAtTime(40,g2.audioCtx.currentTime+0.5);gain.gain.setValueAtTime(0.4,g2.audioCtx.currentTime);}
+    gain.gain.exponentialRampToValueAtTime(0.01,g2.audioCtx.currentTime+0.5);
+    osc.connect(gain);gain.connect(g2.audioCtx.destination);osc.start();osc.stop(g2.audioCtx.currentTime+0.5);
+}
+
+// ── Snake Spark / Burst System ──────────────────────────────────────
+let g2_sparkParts = [];
+
+function g2_spawnBurst(x, y, ok) {
+    const cc = ok ? '#39ff14' : '#ff3131';
+    const c2 = ok ? '#00f3ff' : '#ff9f00';
+    g2_sparkParts.push({type:'flash', x, y, r:10, life:1, dc:0.09, c:cc});
+    for(let i=0;i<2;i++) g2_sparkParts.push({type:'ring', x, y, r:8+i*12, mr:80+i*30, life:1, dc:0.05+i*0.01, c:i%2===0?cc:c2, lw:2.5});
+    const cnt = ok ? 28 : 14;
+    for(let i=0;i<cnt;i++){
+        const a=Math.random()*Math.PI*2, sp=ok?(3+Math.random()*6):(2+Math.random()*4);
+        g2_sparkParts.push({type:'spark', x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, dc:0.03+Math.random()*0.02, s:ok?(2+Math.random()*3):(1+Math.random()*2), c:Math.random()>.5?cc:c2});
+    }
+    if(ok){
+        for(let i=0;i<8;i++){
+            const a=(i/8)*Math.PI*2, sp=4+Math.random()*5;
+            g2_sparkParts.push({type:'star', x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, dc:0.025, s:3+Math.random()*3, c:'#fff'});
+        }
+    }
+}
+
+function g2_drawSparks(ctx) {
+    g2_sparkParts.forEach(p=>{
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.life);
+        if(p.type==='flash'){
+            const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);
+            gr.addColorStop(0,p.c+'bb'); gr.addColorStop(0.4,p.c+'33'); gr.addColorStop(1,p.c+'00');
+            ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2); ctx.fill();
+            p.r+=6; p.life-=p.dc;
+        } else if(p.type==='ring'){
+            ctx.strokeStyle=p.c; ctx.lineWidth=p.lw; ctx.shadowBlur=16; ctx.shadowColor=p.c;
+            ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.stroke();
+            p.r+=(p.mr-p.r)*0.18; p.life-=p.dc;
+        } else if(p.type==='star'){
+            ctx.fillStyle='#fff'; ctx.shadowBlur=10; ctx.shadowColor=p.c;
+            const s=p.s*p.life; ctx.beginPath();
+            for(let k=0;k<8;k++){const a=(k/8)*Math.PI*2,r=k%2===0?s:s*0.38; k===0?ctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r):ctx.lineTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);}
+            ctx.closePath(); ctx.fill();
+            p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.vx*=0.93; p.life-=p.dc;
+        } else {
+            ctx.strokeStyle=p.c; ctx.lineWidth=1.8; ctx.shadowBlur=12; ctx.shadowColor=p.c;
+            ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+p.vx*5,p.y+p.vy*5); ctx.stroke();
+            ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(p.x,p.y,p.s*p.life*0.6,0,Math.PI*2); ctx.fill();
+            p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.vx*=0.93; p.life-=p.dc;
+        }
+        ctx.restore();
+    });
+    g2_sparkParts = g2_sparkParts.filter(p=>p.life>0);
+}
+// ── End Snake Spark System ───────────────────────────────────────────
+
+function g2_update() {
+    if(!g2.gameActive) return;
+    let diff=g2.snake.targetAngle-g2.snake.angle;
+    while(diff<-Math.PI)diff+=Math.PI*2; while(diff>Math.PI)diff-=Math.PI*2;
+    g2.snake.angle+=diff*g2.snake.turnSpeed;
+    g2.snake.x+=Math.cos(g2.snake.angle)*g2.snake.speed;
+    g2.snake.y+=Math.sin(g2.snake.angle)*g2.snake.speed;
+    if(g2.snake.x<0)g2.snake.x=g2.canvas.width; else if(g2.snake.x>g2.canvas.width)g2.snake.x=0;
+    if(g2.snake.y<0)g2.snake.y=g2.canvas.height; else if(g2.snake.y>g2.canvas.height)g2.snake.y=0;
+    g2.snake.history.push({x:g2.snake.x,y:g2.snake.y});
+    if(g2.snake.history.length>g2.snake.tailLength)g2.snake.history.shift();
+    g2.options.forEach(opt=>{
+        opt.x+=opt.vx; opt.y+=opt.vy;
+        if(opt.x<30||opt.x>g2.canvas.width-30)opt.vx*=-1;
+        if(opt.y<200||opt.y>g2.canvas.height-30)opt.vy*=-1;
+        if(Math.hypot(g2.snake.x-opt.x,g2.snake.y-opt.y)<g2.snake.radius+20){
+            if(opt.isCorrect){
+                opt.state='right'; g2_playSound('RIGHT');
+                g2.score+=25; document.getElementById('g2-score-txt').innerText=g2.score;
+                Coins.add(COIN_SNAKE_CORRECT, 'Snake! 🐍');
+                g2_spawnBurst(opt.x, opt.y, true);
+                g2.gameActive=false;
+                setTimeout(()=>{if(g2.score>0&&g2.score%100===0){sendToKodular('LEVEL_COMPLETE');document.getElementById('level-modal').style.display='flex';}else{g2.gameActive=true;g2_generateQuestion();}},600);
+            } else {
+                opt.state='wrong'; g2_playSound('WRONG'); g2.lives--;
+                document.getElementById('g2-life-txt').innerText=g2.lives;
+                g2_spawnBurst(opt.x, opt.y, false);
+                g2.gameActive=false;
+                setTimeout(()=>{if(g2.lives<=0)document.getElementById('over-modal').style.display='flex';else{g2.gameActive=true;g2_generateQuestion();}},600);
+            }
+        }
+    });
+}
+
+function g2_draw() {
+    if(document.getElementById('game2-container').style.display==='none') return;
+    const ctx=g2.ctx, canvas=g2.canvas;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    g2.snake.history.forEach((p,i)=>{
+        ctx.globalAlpha=i/g2.snake.history.length; ctx.fillStyle=g2.snake.color;
+        let size=g2.snake.radius*(0.3+i/g2.snake.history.length*0.7);
+        ctx.beginPath(); ctx.arc(p.x,p.y,size,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha=1; ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(g2.snake.x,g2.snake.y,g2.snake.radius,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#000'; ctx.font='bold 16px Arial'; ctx.textAlign='center';
+    ctx.fillText("🐍",g2.snake.x,g2.snake.y+6);
+    g2.options.forEach(opt=>{
+        let color=(opt.state==='right')?'#39ff14':(opt.state==='wrong'?'#ff3131':'#00f3ff');
+        ctx.strokeStyle=color; ctx.lineWidth=2;
+        ctx.strokeRect(opt.x-30,opt.y-30,60,60);
+        ctx.fillStyle=(opt.state==='normal')?'rgba(0,243,255,0.05)':color;
+        ctx.fillRect(opt.x-30,opt.y-30,60,60);
+        ctx.fillStyle=(opt.state==='normal')?'white':'black';
+        ctx.font='bold 20px Orbitron'; ctx.textAlign='center';
+        ctx.fillText(opt.val,opt.x,opt.y+8);
+    });
+    g2_drawSparks(ctx);
+    g2_update();
+    g2_animationId = requestAnimationFrame(g2_draw);
+}
+
+// =====================================================================
+// GAME 3 — EMOJI SPELLING  (all functions prefixed g3_)
+// 1 coin reward per level (10 words) completed
+// =====================================================================
+const G3_LEVELS={
+  1:{time:15000,lives:3,label:'LV 1 · EASY',colorClass:'g3lv1',titleClass:'g3lv1c',startClass:'',hintsAllowed:2,timeFreeze:1,skips:1},
+  2:{time:12000,lives:3,label:'LV 2 · NORMAL',colorClass:'g3lv2',titleClass:'g3lv2c',startClass:'g3lv2s',hintsAllowed:2,timeFreeze:1,skips:1},
+  3:{time:10000,lives:2,label:'LV 3 · HARD',colorClass:'g3lv3',titleClass:'g3lv3c',startClass:'g3lv3s',hintsAllowed:1,timeFreeze:1,skips:1},
+  4:{time:7000,lives:1,label:'LV 4 · EXPERT',colorClass:'g3lv4',titleClass:'g3lv4c',startClass:'g3lv4s',hintsAllowed:1,timeFreeze:0,skips:0},
+};
+const G3_LV1=[
+  {e:'🐯',w:'TIGER',c:'ANIMAL'},{e:'🦁',w:'LION',c:'ANIMAL'},{e:'🐘',w:'ELEPHANT',c:'ANIMAL'},
+  {e:'🐬',w:'DOLPHIN',c:'ANIMAL'},{e:'🦒',w:'GIRAFFE',c:'ANIMAL'},{e:'🐧',w:'PENGUIN',c:'ANIMAL'},
+  {e:'🐸',w:'FROG',c:'ANIMAL'},{e:'🦊',w:'FOX',c:'ANIMAL'},{e:'🐺',w:'WOLF',c:'ANIMAL'},
+  {e:'🦋',w:'BUTTERFLY',c:'INSECT'},{e:'🍎',w:'APPLE',c:'FRUIT'},{e:'🍌',w:'BANANA',c:'FRUIT'},
+  {e:'🍇',w:'GRAPES',c:'FRUIT'},{e:'🍓',w:'STRAWBERRY',c:'FRUIT'},{e:'🍊',w:'ORANGE',c:'FRUIT'},
+  {e:'🍋',w:'LEMON',c:'FRUIT'},{e:'🍉',w:'WATERMELON',c:'FRUIT'},{e:'🥭',w:'MANGO',c:'FRUIT'},
+  {e:'🚗',w:'CAR',c:'VEHICLE'},{e:'✈️',w:'AIRPLANE',c:'VEHICLE'},{e:'🚀',w:'ROCKET',c:'VEHICLE'},
+  {e:'🌈',w:'RAINBOW',c:'NATURE'},{e:'⭐',w:'STAR',c:'NATURE'},{e:'🌙',w:'MOON',c:'NATURE'},
+  {e:'☀️',w:'SUN',c:'NATURE'},{e:'🏠',w:'HOUSE',c:'PLACE'},{e:'🐶',w:'DOG',c:'ANIMAL'},
+  {e:'🐱',w:'CAT',c:'ANIMAL'},{e:'🐰',w:'RABBIT',c:'ANIMAL'},{e:'🐟',w:'FISH',c:'ANIMAL'},
+];
+const G3_LV2=[
+  {e:'🦏',w:'RHINOCEROS',c:'ANIMAL'},{e:'🦩',w:'FLAMINGO',c:'ANIMAL'},{e:'🐊',w:'CROCODILE',c:'ANIMAL'},
+  {e:'🦦',w:'OTTER',c:'ANIMAL'},{e:'🦅',w:'EAGLE',c:'ANIMAL'},{e:'🐙',w:'OCTOPUS',c:'ANIMAL'},
+  {e:'🍒',w:'CHERRY',c:'FRUIT'},{e:'🥝',w:'KIWI',c:'FRUIT'},{e:'🥑',w:'AVOCADO',c:'FRUIT'},
+  {e:'🥦',w:'BROCCOLI',c:'VEGETABLE'},{e:'🌽',w:'CORN',c:'VEGETABLE'},{e:'🥕',w:'CARROT',c:'VEGETABLE'},
+  {e:'🇮🇳',w:'INDIA',c:'COUNTRY'},{e:'🇺🇸',w:'AMERICA',c:'COUNTRY'},{e:'🇯🇵',w:'JAPAN',c:'COUNTRY'},
+  {e:'🎸',w:'GUITAR',c:'MUSIC'},{e:'🎹',w:'PIANO',c:'MUSIC'},{e:'⚽',w:'FOOTBALL',c:'SPORT'},
+  {e:'🏀',w:'BASKETBALL',c:'SPORT'},{e:'🍕',w:'PIZZA',c:'FOOD'},{e:'🍔',w:'BURGER',c:'FOOD'},
+  {e:'🍣',w:'SUSHI',c:'FOOD'},{e:'🎂',w:'CAKE',c:'FOOD'},{e:'🍦',w:'ICECREAM',c:'FOOD'},
+  {e:'🍩',w:'DONUT',c:'FOOD'},{e:'☕',w:'COFFEE',c:'DRINK'},{e:'🎾',w:'TENNIS',c:'SPORT'},
+  {e:'🎺',w:'TRUMPET',c:'MUSIC'},{e:'🫐',w:'BLUEBERRY',c:'FRUIT'},{e:'🍆',w:'EGGPLANT',c:'VEGETABLE'},
+];
+const G3_LV3=[
+  {e:'🏔️',w:'EVEREST',c:'PLACE'},{e:'🗼',w:'EIFFEL',c:'PLACE'},{e:'🏯',w:'CASTLE',c:'PLACE'},
+  {e:'🔭',w:'TELESCOPE',c:'SCIENCE'},{e:'🔬',w:'MICROSCOPE',c:'SCIENCE'},{e:'⚗️',w:'CHEMISTRY',c:'SCIENCE'},
+  {e:'🧬',w:'GENETICS',c:'SCIENCE'},{e:'🇩🇪',w:'GERMANY',c:'COUNTRY'},{e:'🇨🇳',w:'CHINA',c:'COUNTRY'},
+  {e:'🇮🇹',w:'ITALY',c:'COUNTRY'},{e:'🇷🇺',w:'RUSSIA',c:'COUNTRY'},{e:'🎭',w:'THEATER',c:'ART'},
+  {e:'🎨',w:'PAINTING',c:'ART'},{e:'🎬',w:'CINEMA',c:'ART'},{e:'⛵',w:'SAILBOAT',c:'VEHICLE'},
+  {e:'🚁',w:'HELICOPTER',c:'VEHICLE'},{e:'🚂',w:'LOCOMOTIVE',c:'VEHICLE'},{e:'🏋️',w:'WEIGHTLIFT',c:'SPORT'},
+  {e:'🏊',w:'SWIMMING',c:'SPORT'},{e:'🥊',w:'BOXING',c:'SPORT'},{e:'🌋',w:'VOLCANO',c:'NATURE'},
+  {e:'🌪️',w:'TORNADO',c:'NATURE'},{e:'❄️',w:'SNOWFLAKE',c:'NATURE'},{e:'🐉',w:'DRAGON',c:'FANTASY'},
+  {e:'🧙',w:'WIZARD',c:'FANTASY'},{e:'🦄',w:'UNICORN',c:'FANTASY'},{e:'📚',w:'LIBRARY',c:'PLACE'},
+  {e:'🏛️',w:'MUSEUM',c:'PLACE'},{e:'🛸',w:'SPACECRAFT',c:'VEHICLE'},{e:'🧜',w:'MERMAID',c:'FANTASY'},
+];
+const G3_LV4=[
+  {e:'🦘',w:'KANGAROO',c:'ANIMAL'},{e:'🦓',w:'ZEBRA',c:'ANIMAL'},{e:'🦍',w:'GORILLA',c:'ANIMAL'},
+  {e:'🦑',w:'SQUID',c:'ANIMAL'},{e:'🦞',w:'LOBSTER',c:'ANIMAL'},{e:'🦎',w:'LIZARD',c:'ANIMAL'},
+  {e:'🌌',w:'GALAXY',c:'SPACE'},{e:'🪐',w:'SATURN',c:'SPACE'},{e:'☄️',w:'COMET',c:'SPACE'},
+  {e:'🛰️',w:'SATELLITE',c:'SPACE'},{e:'🎻',w:'VIOLIN',c:'MUSIC'},{e:'🥁',w:'DRUMS',c:'MUSIC'},
+  {e:'🎷',w:'SAXOPHONE',c:'MUSIC'},{e:'🏆',w:'CHAMPION',c:'SPORT'},{e:'🥇',w:'GOLD',c:'SPORT'},
+  {e:'🃏',w:'JOKER',c:'GAME'},{e:'♟️',w:'CHESS',c:'GAME'},{e:'🎲',w:'DICE',c:'GAME'},
+  {e:'🧩',w:'PUZZLE',c:'GAME'},{e:'🎮',w:'GAMEPAD',c:'GAME'},{e:'🕹️',w:'JOYSTICK',c:'GAME'},
+  {e:'🌊',w:'TSUNAMI',c:'NATURE'},{e:'🏜️',w:'DESERT',c:'NATURE'},{e:'💎',w:'DIAMOND',c:'GEM'},
+  {e:'🔮',w:'CRYSTAL',c:'MAGIC'},{e:'🧲',w:'MAGNET',c:'SCIENCE'},{e:'🌿',w:'JUNGLE',c:'NATURE'},
+  {e:'🦤',w:'DODO',c:'ANIMAL'},{e:'🪗',w:'ACCORDION',c:'MUSIC'},{e:'🎯',w:'ARCHERY',c:'SPORT'},
+];
+const G3_POOLS=[null,G3_LV1,G3_LV2,G3_LV3,G3_LV4];
+const G3_TOTAL=10;
+
+// State
+let g3_lvl=1,g3_score=0,g3_streak=0,g3_qCount=0,g3_lives=3;
+let g3_parts=[],g3_afr=null;
+let g3_currentWord='',g3_typedLetters=[],g3_shuffled=[],g3_timerInt=null,g3_answered=false;
+let g3_usedIndices=[];
+let g3_puHints=2,g3_puTime=1,g3_puSkip=1;
+let g3_timeFrozen=false;
+let g3_correctCount=0,g3_wrongCount=0,g3_timeoutCount=0;
+let g3_hintedSlots=[];
+let g3_spcv=null,g3_sctx=null;
+
+const G3_AC=new(window.AudioContext||window.webkitAudioContext)();
+
+function g3_onOpen(){
+  // Init canvas
+  g3_spcv=document.getElementById('g3-sp');
+  g3_sctx=g3_spcv.getContext('2d');
+  g3_spcv.width=window.innerWidth;g3_spcv.height=window.innerHeight;
+  if(g3_afr)cancelAnimationFrame(g3_afr);
+  g3_parts=[];
+  g3_drawParts();
+  // Show overlay
+  document.getElementById('g3-ov').style.display='flex';
+  document.getElementById('g3-fin').style.display='none';
+  document.getElementById('g3-ov-title').textContent='🔤 EMOJI SPELLING';
+  document.getElementById('g3-ov-hint').textContent='LOOK AT THE EMOJI AND SPELL THE WORD!\nTAP THE LETTERS IN THE RIGHT ORDER!';
+  document.getElementById('g3-start-btn').textContent='▶ START';
+  document.getElementById('g3-start-btn').className='g3-start-btn';
+}
+
+function g3_playOk(){
+  try{G3_AC.resume();[0,0.07,0.14].forEach((t,i)=>{const o=G3_AC.createOscillator(),g=G3_AC.createGain();o.frequency.value=[660,880,1100][i];g.gain.setValueAtTime(0,G3_AC.currentTime+t);g.gain.linearRampToValueAtTime(0.22,G3_AC.currentTime+t+0.03);g.gain.exponentialRampToValueAtTime(0.001,G3_AC.currentTime+t+0.2);o.connect(g);g.connect(G3_AC.destination);o.start(G3_AC.currentTime+t);o.stop(G3_AC.currentTime+t+0.22);});}catch(e){}
+}
+function g3_playWrong(){
+  try{G3_AC.resume();const dur=0.38;[520,660,780,1045].forEach((freq,i)=>{const o=G3_AC.createOscillator(),g=G3_AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(freq,G3_AC.currentTime);o.frequency.exponentialRampToValueAtTime(freq*0.45,G3_AC.currentTime+dur);g.gain.setValueAtTime(0,G3_AC.currentTime);g.gain.linearRampToValueAtTime(0.18/(i+1),G3_AC.currentTime+0.08);g.gain.exponentialRampToValueAtTime(0.001,G3_AC.currentTime+dur);const f=G3_AC.createBiquadFilter();f.type='lowpass';f.frequency.value=1800-i*200;o.connect(f);f.connect(g);g.connect(G3_AC.destination);o.start();o.stop(G3_AC.currentTime+dur+0.05);});}catch(e){}
+}
+function g3_playTick(){
+  try{G3_AC.resume();const o=G3_AC.createOscillator(),g=G3_AC.createGain();o.frequency.value=900+g3_streak*30;g.gain.setValueAtTime(0.12,G3_AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,G3_AC.currentTime+0.06);o.connect(g);g.connect(G3_AC.destination);o.start();o.stop(G3_AC.currentTime+0.07);}catch(e){}
+}
+
+function g3_selLvl(l,card){
+  g3_lvl=l;
+  document.querySelectorAll('.g3-lvl-card').forEach(c=>{c.className='g3-lvl-card';});
+  card.classList.add('g3sel'+l);
+  const sb=document.getElementById('g3-start-btn');
+  sb.className='g3-start-btn'+(l>1?' g3lv'+l+'s':'');
+}
+
+function g3_updateLevelTheme(){
+  const cfg=G3_LEVELS[g3_lvl];
+  document.getElementById('g3-lvl-badge').className='g3-lvl-badge '+cfg.colorClass;
+  document.getElementById('g3-lvl-badge').textContent=cfg.label;
+  document.getElementById('g3-title-txt').className='g3-title '+cfg.titleClass;
+  const barColors={1:'#39ff14',2:'#3b9eff',3:'#ff9f0a',4:'#ff3b3b'};
+  document.getElementById('g3-tbar').style.background=barColors[g3_lvl];
+}
+
+function g3_updatePUDisplay(){
+  document.getElementById('g3-pu-hint-c').textContent=g3_puHints;
+  document.getElementById('g3-pu-time-c').textContent=g3_puTime;
+  document.getElementById('g3-pu-skip-c').textContent=g3_puSkip;
+  document.getElementById('g3-pu-hint').classList.toggle('g3used',g3_puHints<=0);
+  document.getElementById('g3-pu-time').classList.toggle('g3used',g3_puTime<=0);
+  document.getElementById('g3-pu-skip').classList.toggle('g3used',g3_puSkip<=0);
+}
+
+function g3_useHint(){
+  if(g3_puHints<=0||g3_answered)return;
+  for(let i=0;i<g3_currentWord.length;i++){
+    if(!g3_typedLetters[i]){
+      g3_typedLetters[i]=g3_currentWord[i];
+      g3_hintedSlots.push(i);
+      const btns=document.querySelectorAll('.g3-lbtn:not(.g3lused)');
+      for(const btn of btns){if(btn.dataset.letter===g3_currentWord[i]){btn.classList.add('g3lused');btn.dataset.slotIndex=i;break;}}
+      g3_puHints--;g3_updatePUDisplay();g3_renderSlots();
+      g3_showMsg('💡 HINT USED!','#fbbf24');
+      if(g3_typedLetters.filter(Boolean).length===g3_currentWord.length)setTimeout(g3_wordComplete,300);
+      return;
+    }
+  }
+}
+function g3_useTimeFreeze(){
+  if(g3_puTime<=0||g3_answered||g3_timeFrozen)return;
+  g3_timeFrozen=true;g3_puTime--;g3_updatePUDisplay();
+  g3_showMsg('⏸ TIME FROZEN! 3s','#a78bfa');
+  setTimeout(()=>{g3_timeFrozen=false;g3_showMsg(' ','');},3000);
+}
+function g3_useSkip(){
+  if(g3_puSkip<=0||g3_answered)return;
+  g3_puSkip--;g3_updatePUDisplay();g3_answered=true;
+  clearInterval(g3_timerInt);
+  g3_showMsg('⏭ SKIPPED!','#6b7280');
+  setTimeout(g3_nextQ,800);
+}
+
+function g3_updateLives(){
+  const hearts=['☠️','❤️','❤️❤️','❤️❤️❤️'];
+  document.getElementById('g3-lives-row').textContent=g3_lives<=0?'💀':(hearts[Math.min(g3_lives,3)]||'❤️'.repeat(g3_lives));
+}
+function g3_loseLife(){
+  g3_lives--;g3_updateLives();
+  if(g3_lives<=0){clearInterval(g3_timerInt);g3_answered=true;g3_showMsg('💀 GAME OVER!','#ff3b3b');setTimeout(g3_endGame,1200);return true;}
+  return false;
+}
+
+function g3_startGame(){
+  document.getElementById('g3-ov').style.display='none';
+  document.getElementById('g3-fin').style.display='none';
+  const cfg=G3_LEVELS[g3_lvl];
+  g3_lives=cfg.lives;g3_puHints=cfg.hintsAllowed;g3_puTime=cfg.timeFreeze;g3_puSkip=cfg.skips;
+  g3_score=0;g3_streak=0;g3_qCount=0;g3_parts=[];g3_usedIndices=[];
+  g3_correctCount=0;g3_wrongCount=0;g3_timeoutCount=0;
+  document.getElementById('g3-sc').textContent=0;
+  document.getElementById('g3-stk').textContent=0;
+  document.getElementById('g3-msg').textContent=' ';
+  document.getElementById('g3-emoji-box').textContent='?';
+  document.getElementById('g3-cat-tag').textContent='—';
+  document.getElementById('g3-answer-row').innerHTML='';
+  document.getElementById('g3-letters-row').innerHTML='';
+  document.getElementById('g3-streak-badge').textContent='×1';
+  g3_updateLives();g3_updatePUDisplay();g3_updateLevelTheme();
+  if(g3_afr)cancelAnimationFrame(g3_afr);
+  g3_drawParts();
+  g3_nextQ();
+}
+
+function g3_nextQ(){
+  if(g3_qCount>=G3_TOTAL){g3_endGame();return;}
+  g3_qCount++;
+  const pool=G3_POOLS[g3_lvl];
+  if(g3_usedIndices.length>=pool.length)g3_usedIndices=[];
+  let idx;do{idx=Math.floor(Math.random()*pool.length);}while(g3_usedIndices.includes(idx));
+  g3_usedIndices.push(idx);
+  const item=pool[idx];
+  g3_currentWord=item.w;
+  g3_typedLetters=new Array(g3_currentWord.length).fill(null);
+  g3_hintedSlots=[];
+  g3_shuffled=[...g3_currentWord].sort(()=>Math.random()-0.5);
+  g3_answered=false;g3_timeFrozen=false;
+  document.getElementById('g3-qnum').textContent=g3_qCount+' / '+G3_TOTAL;
+  const eb=document.getElementById('g3-emoji-box');
+  eb.textContent=item.e;eb.classList.remove('g3pop');void eb.offsetWidth;eb.classList.add('g3pop');
+  document.getElementById('g3-cat-tag').textContent=item.c;
+  g3_showMsg(' ','');g3_renderSlots();
+  const lr=document.getElementById('g3-letters-row');lr.innerHTML='';
+  g3_shuffled.forEach((letter,i)=>{
+    const btn=document.createElement('div');
+    btn.className='g3-lbtn';btn.textContent=letter;
+    btn.dataset.letter=letter;btn.dataset.btnIndex=i;btn.dataset.slotIndex='';
+    btn.onclick=()=>g3_tapLetter(btn,letter);
+    btn.ontouchstart=e=>{e.preventDefault();g3_tapLetter(btn,letter);};
+    lr.appendChild(btn);
+  });
+  g3_startTimer();
+}
+
+function g3_startTimer(){
+  const cfg=G3_LEVELS[g3_lvl];
+  let elapsed=0;
+  const bar=document.getElementById('g3-tbar');
+  const barColors={1:'#39ff14',2:'#3b9eff',3:'#ff9f0a',4:'#ff3b3b'};
+  bar.style.width='100%';bar.style.background=barColors[g3_lvl];
+  clearInterval(g3_timerInt);
+  g3_timerInt=setInterval(()=>{
+    if(g3_timeFrozen)return;
+    elapsed+=100;
+    const pct=Math.max(0,100-(elapsed/cfg.time)*100);
+    bar.style.width=pct+'%';
+    if(pct<25)bar.style.background='#ef4444';
+    else if(pct<55)bar.style.background='#f59e0b';
+    if(elapsed>=cfg.time&&!g3_answered){
+      clearInterval(g3_timerInt);g3_answered=true;
+      g3_streak=0;g3_timeoutCount++;
+      document.getElementById('g3-stk').textContent=0;
+      document.getElementById('g3-streak-badge').textContent='×1';
+      g3_showMsg('⏰ TIME UP! — '+g3_currentWord,'#f59e0b');
+      for(let i=0;i<g3_currentWord.length;i++)g3_typedLetters[i]=g3_currentWord[i];
+      g3_renderSlots();
+      const dead=g3_loseLife();
+      if(!dead)setTimeout(g3_nextQ,1800);
+    }
+  },100);
+}
+
+function g3_renderSlots(){
+  const ar=document.getElementById('g3-answer-row');ar.innerHTML='';
+  for(let i=0;i<g3_currentWord.length;i++){
+    const slot=document.createElement('div');
+    const isHinted=g3_hintedSlots.includes(i);
+    slot.className='g3-slot'+(g3_typedLetters[i]?' g3filled':'')+(isHinted?' g3hinted':'');
+    slot.id='g3slot-'+i;slot.textContent=g3_typedLetters[i]||'';
+    if(g3_typedLetters[i]&&!isHinted){
+      slot.onclick=()=>g3_removeSlot(i);
+      slot.ontouchstart=e=>{e.preventDefault();g3_removeSlot(i);};
+    }
+    ar.appendChild(slot);
+  }
+}
+function g3_removeSlot(i){
+  if(g3_answered||!g3_typedLetters[i]||g3_hintedSlots.includes(i))return;
+  const letter=g3_typedLetters[i];g3_typedLetters[i]=null;
+  const btns=document.querySelectorAll('.g3-lbtn.g3lused');
+  for(const btn of btns){if(btn.dataset.letter===letter&&parseInt(btn.dataset.slotIndex)===i){btn.classList.remove('g3lused');btn.dataset.slotIndex='';break;}}
+  g3_renderSlots();
+}
+function g3_showMsg(txt,color){
+  const el=document.getElementById('g3-msg');el.textContent=txt;el.style.color=color;
+}
+
+function g3_tapLetter(btn,letter){
+  if(g3_answered)return;
+  G3_AC.resume();
+  let slotIdx=-1;
+  for(let i=0;i<g3_currentWord.length;i++){if(!g3_typedLetters[i]){slotIdx=i;break;}}
+  if(slotIdx===-1)return;
+  const correct=g3_currentWord[slotIdx]===letter;
+  if(correct){
+    g3_typedLetters[slotIdx]=letter;btn.classList.add('g3lused');btn.dataset.slotIndex=slotIdx;
+    g3_playTick();g3_renderSlots();
+    const slot=document.getElementById('g3slot-'+slotIdx);
+    if(slot){slot.classList.add('g3cflash');setTimeout(()=>slot.classList.remove('g3cflash'),350);}
+    g3_spawnBurst(btn,true);
+    if(g3_typedLetters.filter(Boolean).length===g3_currentWord.length)setTimeout(g3_wordComplete,200);
+  }else{
+    btn.classList.add('g3wtap');setTimeout(()=>btn.classList.remove('g3wtap'),280);
+    g3_playWrong();g3_spawnBurst(btn,false);
+    document.querySelectorAll('.g3-slot.g3filled').forEach(s=>{s.classList.add('g3wflash');setTimeout(()=>s.classList.remove('g3wflash'),320);});
+    g3_showMsg('❌ WRONG LETTER!','#ef4444');
+    setTimeout(()=>g3_showMsg(' ',''),700);
+  }
+}
+
+function g3_wordComplete(){
+  g3_answered=true;clearInterval(g3_timerInt);
+  g3_playOk();g3_spawnWordBurst();
+  g3_streak++;g3_correctCount++;
+  const mult=g3_streak>=10?4:g3_streak>=7?3:g3_streak>=4?2:1;
+  document.getElementById('g3-streak-badge').textContent='×'+mult;
+  const pts=(20+g3_streak*5)*mult;
+  g3_score+=pts;
+  document.getElementById('g3-sc').textContent=g3_score;
+  document.getElementById('g3-stk').textContent=g3_streak;
+  g3_showMsg('🎉 +'+pts+' CORRECT!','#39ff14');
+  document.querySelectorAll('.g3-slot').forEach(s=>s.classList.add('g3cflash'));
+  setTimeout(g3_nextQ,1100);
+}
+
+function g3_endGame(){
+  clearInterval(g3_timerInt);
+  sendToKodular('LEVEL_COMPLETE');
+  // 🪙 1 coin reward per level completed
+  const coinsEarned = Coins.add(1, 'Emoji Spelling Level! 🔤');
+  const ov=document.getElementById('g3-ov');
+  ov.style.display='flex';
+  document.getElementById('g3-fscore').textContent=g3_score;
+  let medal='';
+  const pct=g3_correctCount/G3_TOTAL;
+  if(pct===1)medal='🥇🥇🥇';else if(pct>=0.8)medal='🥇🥇';else if(pct>=0.6)medal='🥇';else if(pct>=0.4)medal='🥈';else medal='🥉';
+  document.getElementById('g3-fmedals').textContent=medal;
+  document.getElementById('g3-finfo').textContent=G3_TOTAL+' WORDS · '+G3_LEVELS[g3_lvl].label;
+  document.getElementById('g3-fbreak').innerHTML='✅ CORRECT: '+g3_correctCount+' &nbsp;|&nbsp; ❌ WRONG: '+g3_wrongCount+' &nbsp;|&nbsp; ⏰ TIMEOUT: '+g3_timeoutCount;
+  document.getElementById('g3-coin-earned').textContent = coinsEarned > 0 ? '🪙 +'+coinsEarned+' COIN EARNED!' : '🪙 Daily limit reached — no coin today';
+  document.getElementById('g3-fin').style.display='flex';
+  document.getElementById('g3-ov-title').textContent='🏆 LEVEL COMPLETE!';
+  document.getElementById('g3-ov-hint').textContent='WANT TO PLAY AGAIN?';
+  const sb=document.getElementById('g3-start-btn');
+  sb.textContent='▶ PLAY AGAIN';
+  sb.className='g3-start-btn'+(g3_lvl>1?' g3lv'+g3_lvl+'s':'');
+}
+
+// Particles
+function g3_spawnBurst(el,ok){
+  if(!g3_spcv)return;
+  const er=el.getBoundingClientRect();
+  const x=er.left+er.width/2,y=er.top+er.height/2;
+  const cc=ok?'#c8ff00':'#ff2222',c2=ok?'#ffea00':'#ff7744';
+  g3_parts.push({type:'flash',x,y,r:8,life:1,dc:0.11,c:cc});
+  g3_parts.push({type:'ring',x,y,r:5,mr:60,life:1,dc:0.055,c:cc,lw:2.5});
+  const cnt=ok?24:12;
+  for(let i=0;i<cnt;i++){const a=Math.random()*Math.PI*2,sp=ok?(2+Math.random()*6):(1.5+Math.random()*4);g3_parts.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.032+Math.random()*0.03,s:ok?(1.5+Math.random()*3):(1+Math.random()*2),c:Math.random()>.5?cc:c2});}
+}
+function g3_spawnWordBurst(){
+  if(!g3_spcv)return;
+  const x=window.innerWidth/2,y=window.innerHeight*0.42;
+  const cc='#c8ff00',c2='#ffea00';
+  g3_parts.push({type:'flash',x,y,r:20,life:1,dc:0.07,c:cc});
+  for(let i=0;i<3;i++)g3_parts.push({type:'ring',x,y,r:5+i*10,mr:90+i*20,life:1,dc:0.04+i*0.01,c:i%2===0?cc:c2,lw:2.5});
+  for(let i=0;i<50;i++){const a=Math.random()*Math.PI*2,sp=3+Math.random()*10;g3_parts.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.02+Math.random()*0.022,s:1.5+Math.random()*4,c:Math.random()>.5?cc:c2});}
+  for(let i=0;i<14;i++){const a=(i/14)*Math.PI*2,sp=5+Math.random()*8;g3_parts.push({type:'star',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.02,s:4+Math.random()*6,c:'#fff'});}
+}
+function g3_drawParts(){
+  if(!g3_spcv||!g3_sctx)return;
+  g3_spcv.width=window.innerWidth;g3_spcv.height=window.innerHeight;
+  g3_sctx.clearRect(0,0,g3_spcv.width,g3_spcv.height);
+  g3_parts.forEach(p=>{
+    g3_sctx.save();g3_sctx.globalAlpha=Math.max(0,p.life);
+    if(p.type==='flash'){const gr=g3_sctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);gr.addColorStop(0,p.c+'bb');gr.addColorStop(0.35,p.c+'33');gr.addColorStop(1,p.c+'00');g3_sctx.fillStyle=gr;g3_sctx.beginPath();g3_sctx.arc(p.x,p.y,p.r*5,0,Math.PI*2);g3_sctx.fill();p.r+=6;p.life-=p.dc;}
+    else if(p.type==='ring'){g3_sctx.strokeStyle=p.c;g3_sctx.lineWidth=p.lw;g3_sctx.shadowBlur=18;g3_sctx.shadowColor=p.c;g3_sctx.beginPath();g3_sctx.arc(p.x,p.y,p.r,0,Math.PI*2);g3_sctx.stroke();p.r+=(p.mr-p.r)*0.2;p.life-=p.dc;}
+    else if(p.type==='star'){g3_sctx.fillStyle='#fff';g3_sctx.shadowBlur=10;g3_sctx.shadowColor=p.c;const s=p.s*p.life;g3_sctx.beginPath();for(let k=0;k<8;k++){const a=(k/8)*Math.PI*2,r=k%2===0?s:s*0.38;k===0?g3_sctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r):g3_sctx.lineTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);}g3_sctx.closePath();g3_sctx.fill();p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.vx*=0.93;p.life-=p.dc;}
+    else{g3_sctx.strokeStyle=p.c;g3_sctx.lineWidth=1.8;g3_sctx.shadowBlur=12;g3_sctx.shadowColor=p.c;g3_sctx.beginPath();g3_sctx.moveTo(p.x,p.y);g3_sctx.lineTo(p.x+p.vx*5,p.y+p.vy*5);g3_sctx.stroke();g3_sctx.fillStyle='#fff';g3_sctx.beginPath();g3_sctx.arc(p.x,p.y,p.s*p.life*0.6,0,Math.PI*2);g3_sctx.fill();p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.vx*=0.93;p.life-=p.dc;}
+    g3_sctx.restore();
+  });
+  g3_parts=g3_parts.filter(p=>p.life>0);
+  g3_afr=requestAnimationFrame(g3_drawParts);
+}
+// =====================================================================
+// GAME 4 — MEMORY MATCH  (all functions prefixed g4_)
+// 1 coin reward per level completed
+// =====================================================================
+const G4_LEVELS=[
+  {name:'ANIMALS',emoji:'🐾',color:'#39ff14',cols:3,rows:4,pairs:6,emojis:['🐯','🦁','🐘','🐬','🦒','🐧','🐸','🦊','🐺','🦋','🐙','🦜']},
+  {name:'FOOD',emoji:'🍔',color:'#ff6b35',cols:4,rows:4,pairs:8,emojis:['🍕','🍔','🌮','🍜','🍣','🍦','🎂','🍩','🍗','🥗','🍱','🥪','🧇','🥞','🧆','🍟']},
+  {name:'VEHICLES',emoji:'🚗',color:'#00d4ff',cols:4,rows:4,pairs:8,emojis:['🚗','🚕','🚙','🚌','🏎️','🚓','🚑','🚒','🚂','✈️','🚀','🛸','🚢','🛥️','🚁','🛵']},
+  {name:'MUSIC',emoji:'🎸',color:'#c084fc',cols:4,rows:5,pairs:10,emojis:['🎸','🎹','🥁','🎺','🎻','🪗','🎷','🪘','🎙️','🎤','🎵','🎶','🎼','🪈','🔔','🎚️']},
+  {name:'SPORTS',emoji:'⚽',color:'#fbbf24',cols:4,rows:4,pairs:8,emojis:['⚽','🏀','🏈','🎾','🏐','🏓','🥊','🎯','🏒','🏸','🥋','🏹','🎱','🏊','🚴','🤸']},
+  {name:'NATURE',emoji:'🌿',color:'#39ff14',cols:4,rows:5,pairs:10,emojis:['🌺','🌸','🌹','🌻','🌷','🍀','🌵','🌴','🍁','🍄','🌿','🌾','🪷','🎋','🪸','🌊']},
+  {name:'FLAGS',emoji:'🏴',color:'#f472b6',cols:4,rows:5,pairs:10,emojis:['🇮🇳','🇺🇸','🇬🇧','🇯🇵','🇨🇳','🇧🇷','🇫🇷','🇩🇪','🇰🇷','🇦🇺','🇨🇦','🇮🇹','🇷🇺','🇲🇽','🇪🇸','🇸🇦']},
+  {name:'TOOLS',emoji:'🔧',color:'#fb7185',cols:4,rows:5,pairs:10,emojis:['🔧','🪛','🔨','⚒️','🪚','🔩','⚙️','🧲','🪝','🔑','🗝️','🔐','🧰','🪤','💡','🔦']},
+  {name:'SPACE',emoji:'🚀',color:'#818cf8',cols:4,rows:5,pairs:10,emojis:['🚀','🛸','🌍','🌙','⭐','☄️','🪐','🌌','🔭','🛰️','💫','🌠','👾','🌟','🪨','🌑']},
+  {name:'WORLD',emoji:'🗺️',color:'#f472b6',cols:4,rows:5,pairs:10,emojis:['🗼','🗽','🏯','🕌','🗿','⛩️','🏰','🌋','🏟️','🎡','🎠','🎪','🏛️','🕍','⛪','🛕']},
+  {name:'EMOTIONS',emoji:'😍',color:'#fb7185',cols:4,rows:6,pairs:12,emojis:['😂','😍','🥳','😎','🤩','😱','🥺','😴','🤔','😡','🥰','😇','🤯','😈','👻','🤖','💀','🎭','🥸','🤑','😤','🧐','🫠','🫣']},
+  {name:'MIXED',emoji:'🔮',color:'#c084fc',cols:4,rows:6,pairs:12,emojis:['🚀','🎸','⚽','🌈','💎','🔥','⚡','🎯','🏆','🧩','🃏','🎪','🦄','🐉','🪄','👑','🌋','🎭','💣','🕹️','🧬','🔮','🪬','🛡️']},
+  {name:'SCIENCE',emoji:'🧬',color:'#00d4ff',cols:5,rows:6,pairs:15,emojis:['🧬','🔬','🧪','⚗️','🧫','🧲','💊','🩺','🩻','🔭','⚡','☢️','☣️','🧠','👁️','🦷','🦴','💉','🩸','🧯','🔋','💿','🖥️','📡','🛰️']},
+  {name:'CHAOS',emoji:'🌀',color:'#ffea00',cols:5,rows:6,pairs:15,emojis:['🌀','🎲','🃏','🎰','🧩','🎭','🪄','🔮','💣','⚡','🌈','🦄','🐉','👾','🤖','💀','🧟','🎪','🌋','☄️','🌊','🔥','❄️','🌪️','⚫']}
+];
+const G4_DIFF={
+  easy:  {range:[0,3],  timeLimit:0,  preview:false, streakBonus:false},
+  normal:{range:[4,7],  timeLimit:90, preview:false, streakBonus:true},
+  hard:  {range:[8,13], timeLimit:60, preview:true,  streakBonus:true}
+};
+
+let g4_diff='easy', g4_dcfg=G4_DIFF.easy;
+let g4_lvlIdx=0, g4_dStart=0, g4_dEnd=0;
+let g4_cards=[], g4_flipped=[], g4_matched=0, g4_moves=0, g4_lock=false;
+let g4_timerSec=0, g4_timerInt=null, g4_timeLim=0;
+let g4_streak=0, g4_totalScore=0, g4_active=false;
+let g4_parts=[], g4_afr=null;
+let g4_spcv=null, g4_sctx=null;
+const G4_AC=new(window.AudioContext||window.webkitAudioContext)();
+
+function g4_onOpen(){
+  g4_spcv=document.getElementById('g4sp');
+  g4_sctx=g4_spcv.getContext('2d');
+  g4_spcv.width=window.innerWidth; g4_spcv.height=window.innerHeight;
+  g4_parts=[]; g4_afr=null;
+  if(g4_afr) cancelAnimationFrame(g4_afr);
+  g4_drawParts();
+  document.getElementById('g4-ov').style.display='flex';
+  document.getElementById('g4-hview').style.display='flex';
+  document.getElementById('g4-wview').classList.add('g4h');
+  document.getElementById('g4-hbtn').classList.add('g4h');
+  document.getElementById('g4-stktag').classList.add('g4h');
+  document.documentElement.style.setProperty('--g4ac','#39ff14');
+  document.getElementById('g4-title').style.color='#39ff14';
+}
+
+function g4_setTheme(lvl){
+  document.documentElement.style.setProperty('--g4ac',lvl.color);
+  document.getElementById('g4-title').style.color=lvl.color;
+  document.getElementById('g4-lvtag').style.color=lvl.color;
+  document.getElementById('g4-lvtag').style.borderColor=lvl.color+'44';
+  document.getElementById('g4-lvtag').style.background=lvl.color+'11';
+  document.getElementById('g4-wtitle').style.color=lvl.color;
+  const nb=document.getElementById('g4-wnxt');
+  nb.style.background=lvl.color; nb.style.boxShadow=`0 0 18px ${lvl.color}55`; nb.style.color='#060818';
+}
+
+function g4_startDiff(diff){
+  g4_diff=diff; g4_dcfg=G4_DIFF[diff];
+  g4_dStart=g4_dcfg.range[0]; g4_dEnd=g4_dcfg.range[1];
+  g4_lvlIdx=g4_dStart; g4_totalScore=0;
+  g4_launch();
+}
+
+function g4_launch(){
+  const lvl=G4_LEVELS[g4_lvlIdx];
+  document.getElementById('g4-ov').style.display='none';
+  document.getElementById('g4-hbtn').classList.remove('g4h');
+  g4_active=false; g4_moves=0; g4_matched=0; g4_flipped=[]; g4_lock=false;
+  g4_timerSec=0; g4_streak=0; g4_parts=[];
+  g4_timeLim=g4_dcfg.timeLimit;
+  document.getElementById('g4-mval').textContent='0';
+  document.getElementById('g4-pval').textContent='0/'+lvl.pairs;
+  document.getElementById('g4-tval').textContent=g4_timeLim?g4_tfmt(g4_timeLim):'0:00';
+  document.getElementById('g4-tstat').classList.remove('g4-twarn');
+  document.getElementById('g4-lvtag').textContent='LV'+(g4_lvlIdx-g4_dStart+1)+' • '+lvl.name;
+  document.getElementById('g4-msg').textContent=' ';
+  document.getElementById('g4-stktag').classList.add('g4h');
+  g4_setTheme(lvl);
+  if(g4_afr) cancelAnimationFrame(g4_afr);
+  g4_drawParts();
+  g4_buildGrid(lvl);
+  if(g4_dcfg.preview){ g4_startPreview(); } else { g4_active=true; g4_startTimer(); }
+}
+
+function g4_startTimer(){
+  clearInterval(g4_timerInt);
+  if(g4_timeLim>0){
+    g4_timerInt=setInterval(()=>{
+      g4_timerSec++;
+      const left=g4_timeLim-g4_timerSec;
+      document.getElementById('g4-tval').textContent=g4_tfmt(left);
+      if(left<=15) document.getElementById('g4-tstat').classList.add('g4-twarn');
+      if(left<=0){clearInterval(g4_timerInt); g4_timeOut();}
+    },1000);
+  } else {
+    g4_timerInt=setInterval(()=>{g4_timerSec++;document.getElementById('g4-tval').textContent=g4_tfmt(g4_timerSec);},1000);
+  }
+}
+
+function g4_tfmt(s){const m=Math.floor(Math.abs(s)/60),sec=Math.abs(s)%60;return m+':'+(sec<10?'0':'')+sec;}
+
+function g4_timeOut(){
+  g4_active=false;
+  document.getElementById('g4-msg').style.color='#ef4444';
+  document.getElementById('g4-msg').textContent='⏰ TIME UP!';
+  g4_playWrong();
+  setTimeout(()=>g4_showWin(true),1200);
+}
+
+function g4_startPreview(){
+  document.querySelectorAll('.g4-card').forEach(c=>c.classList.add('g4pv'));
+  const banner=document.getElementById('g4-pvb');
+  const cntEl=document.getElementById('g4-pvc');
+  banner.classList.add('show');
+  let cnt=3; cntEl.textContent=cnt;
+  document.getElementById('g4-msg').style.color='var(--g4ac,#39ff14)';
+  document.getElementById('g4-msg').textContent='👀 MEMORIZE!';
+  const iv=setInterval(()=>{
+    cnt--;
+    if(cnt<=0){
+      clearInterval(iv);
+      document.querySelectorAll('.g4-card').forEach(c=>c.classList.remove('g4pv'));
+      banner.classList.remove('show');
+      document.getElementById('g4-msg').textContent=' ';
+      g4_active=true; g4_startTimer();
+    } else { cntEl.textContent=cnt; }
+  },1000);
+}
+
+function g4_buildGrid(lvl){
+  const pool=lvl.emojis.slice(0,lvl.pairs);
+  g4_cards=[...pool,...pool].sort(()=>Math.random()-0.5);
+  const grid=document.getElementById('g4-grid');
+  grid.style.gridTemplateColumns=`repeat(${lvl.cols},1fr)`;
+  grid.innerHTML=g4_cards.map((e,i)=>`
+    <div class="g4-card" id="g4c${i}" onclick="g4_flip(${i})">
+      <div class="g4-ci">
+        <div class="g4-cf"><div class="g4-cf-dot"></div></div>
+        <div class="g4-cb" style="font-size:26px">${e}</div>
+      </div>
+    </div>`).join('');
+}
+
+function g4_flip(i){
+  if(!g4_active||g4_lock)return;
+  const el=document.getElementById('g4c'+i);
+  if(!el||el.classList.contains('g4f')||el.classList.contains('g4m'))return;
+  G4_AC.resume();
+  el.classList.add('g4f');
+  g4_flipped.push(i);
+  g4_playTick(); g4_spawnFlip(el);
+  if(g4_flipped.length===2){
+    g4_moves++; document.getElementById('g4-mval').textContent=g4_moves;
+    g4_lock=true;
+    const[a,b]=g4_flipped;
+    if(g4_cards[a]===g4_cards[b]){
+      g4_matched++;
+      document.getElementById('g4-pval').textContent=g4_matched+'/'+G4_LEVELS[g4_lvlIdx].pairs;
+      document.getElementById('g4c'+a).classList.add('g4m','g4cf');
+      document.getElementById('g4c'+b).classList.add('g4m','g4cf');
+      g4_flipped=[]; g4_lock=false; g4_streak++;
+      g4_playMatch(); g4_spawnMatchBurst(document.getElementById('g4c'+a),document.getElementById('g4c'+b));
+      document.getElementById('g4-msg').style.color=G4_LEVELS[g4_lvlIdx].color;
+      if(g4_dcfg.streakBonus&&g4_streak>=2){
+        const stEl=document.getElementById('g4-stktag');
+        stEl.classList.remove('g4h'); stEl.textContent='🔥 x'+g4_streak;
+        document.getElementById('g4-msg').textContent='✨ MATCH! x'+g4_streak+' STREAK!';
+      } else { document.getElementById('g4-msg').textContent='✨ MATCH!'; }
+      setTimeout(()=>document.getElementById('g4-msg').textContent=' ',700);
+      if(g4_matched===G4_LEVELS[g4_lvlIdx].pairs){clearInterval(g4_timerInt);setTimeout(()=>g4_showWin(false),500);}
+    } else {
+      g4_streak=0;
+      if(g4_dcfg.streakBonus) document.getElementById('g4-stktag').classList.add('g4h');
+      document.getElementById('g4c'+a).classList.add('g4w');
+      document.getElementById('g4c'+b).classList.add('g4w');
+      g4_playWrong(); g4_spawnWrongBurst(document.getElementById('g4c'+a));
+      document.getElementById('g4-msg').style.color='#ef4444';
+      document.getElementById('g4-msg').textContent='❌ WRONG!';
+      setTimeout(()=>{
+        document.getElementById('g4c'+a).classList.remove('g4f','g4w');
+        document.getElementById('g4c'+b).classList.remove('g4f','g4w');
+        g4_flipped=[]; g4_lock=false;
+        document.getElementById('g4-msg').textContent=' ';
+      },800);
+    }
+  }
+}
+
+function g4_showWin(timedOut){
+  g4_active=false;
+  if(!timedOut) sendToKodular('LEVEL_COMPLETE');
+  const lvl=G4_LEVELS[g4_lvlIdx];
+  const par=lvl.pairs+2;
+  const base=lvl.pairs*100;
+  const moveBonus=Math.max(0,(lvl.pairs*2-g4_moves)*20);
+  const timeBonus=g4_timeLim?Math.max(0,(g4_timeLim-g4_timerSec)*5):Math.max(0,300-g4_timerSec*2);
+  const strBonus=g4_dcfg.streakBonus?g4_streak*15:0;
+  const score=timedOut?Math.floor(g4_matched*30):(base+moveBonus+timeBonus+strBonus);
+  g4_totalScore+=score;
+  const stars=timedOut?'':g4_moves<=par?'⭐⭐⭐':g4_moves<=par+4?'⭐⭐':'⭐';
+  const timeDisp=g4_timeLim?g4_tfmt(g4_timeLim-g4_timerSec):g4_tfmt(g4_timerSec);
+  const isLast=g4_lvlIdx>=g4_dEnd;
+
+  // 🪙 1 coin per level completed
+  let coinMsg='';
+  if(!timedOut){
+    const earned=Coins.add(1,'Memory Match! 🃏');
+    coinMsg=earned>0?'🪙 +'+earned+' COIN EARNED!':'🪙 Daily limit reached';
+  }
+
+  g4_spawnCenterBurst(); g4_playWin();
+  document.getElementById('g4-hview').style.display='none';
+  document.getElementById('g4-wview').classList.remove('g4h');
+  document.getElementById('g4-ov').style.display='flex';
+  document.getElementById('g4-wemoji').textContent=timedOut?'⏰':lvl.emoji;
+  document.getElementById('g4-wtitle').textContent=timedOut?'⏰ TIME UP!':'🏆 WELL DONE!';
+  document.getElementById('g4-wsub').textContent=g4_moves+' MOVES • '+timeDisp+' • '+lvl.name;
+  document.getElementById('g4-wstars').textContent=stars;
+  document.getElementById('g4-wscore').textContent=score;
+  document.getElementById('g4-wcoin').textContent=coinMsg;
+  const badges=[];
+  if(!timedOut&&g4_moves<=par) badges.push({t:'PERFECT!',c:'g'});
+  if(g4_dcfg.streakBonus&&g4_streak>=3) badges.push({t:'🔥 STREAK x'+g4_streak,c:''});
+  if(isLast) badges.push({t:'ALL DONE! 🎉',c:'p'});
+  document.getElementById('g4-wbadges').innerHTML=badges.map(b=>`<div class="g4-badge ${b.c}">${b.t}</div>`).join('');
+  const nb=document.getElementById('g4-wnxt');
+  nb.textContent=timedOut?'↩ RETRY':isLast?'▶ RESTART':'NEXT ▶';
+}
+
+function g4_nextLevel(){
+  const timedOut=document.getElementById('g4-wtitle').textContent.includes('TIME UP');
+  if(!timedOut&&g4_lvlIdx<g4_dEnd) g4_lvlIdx++;
+  else if(g4_lvlIdx>=g4_dEnd) g4_lvlIdx=g4_dStart;
+  document.getElementById('g4-wview').classList.add('g4h');
+  document.getElementById('g4-hview').style.display='none';
+  g4_launch();
+}
+
+function g4_goHome(){
+  g4_active=false; clearInterval(g4_timerInt);
+  document.getElementById('g4-hbtn').classList.add('g4h');
+  document.getElementById('g4-grid').innerHTML='';
+  document.getElementById('g4-msg').textContent=' ';
+  document.getElementById('g4-mval').textContent='0';
+  document.getElementById('g4-pval').textContent='0/6';
+  document.getElementById('g4-tval').textContent='0:00';
+  document.getElementById('g4-tstat').classList.remove('g4-twarn');
+  document.getElementById('g4-stktag').classList.add('g4h');
+  document.getElementById('g4-lvtag').textContent='MEMORY MATCH';
+  document.getElementById('g4-wview').classList.add('g4h');
+  document.getElementById('g4-hview').style.display='flex';
+  document.getElementById('g4-ov').style.display='flex';
+  document.documentElement.style.setProperty('--g4ac','#39ff14');
+  document.getElementById('g4-title').style.color='#39ff14';
+}
+
+// Audio
+function g4_playTick(){try{G4_AC.resume();const o=G4_AC.createOscillator(),g=G4_AC.createGain();o.frequency.value=900;g.gain.setValueAtTime(0.1,G4_AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,G4_AC.currentTime+0.05);o.connect(g);g.connect(G4_AC.destination);o.start();o.stop(G4_AC.currentTime+0.06);}catch(e){}}
+function g4_playMatch(){try{G4_AC.resume();[660,880,1100].forEach((f,i)=>{const o=G4_AC.createOscillator(),g=G4_AC.createGain();const t=G4_AC.currentTime+i*0.07;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.22,t+0.03);g.gain.exponentialRampToValueAtTime(0.001,t+0.2);o.connect(g);g.connect(G4_AC.destination);o.start(t);o.stop(t+0.22);});}catch(e){}}
+function g4_playWrong(){try{G4_AC.resume();const o=G4_AC.createOscillator(),g=G4_AC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(220,G4_AC.currentTime);o.frequency.exponentialRampToValueAtTime(80,G4_AC.currentTime+0.3);g.gain.setValueAtTime(0.18,G4_AC.currentTime);g.gain.exponentialRampToValueAtTime(0.001,G4_AC.currentTime+0.32);o.connect(g);g.connect(G4_AC.destination);o.start();o.stop(G4_AC.currentTime+0.35);}catch(e){}}
+function g4_playWin(){try{G4_AC.resume();[523,659,784,1047].forEach((f,i)=>{const o=G4_AC.createOscillator(),g=G4_AC.createGain();const t=G4_AC.currentTime+i*0.12;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.28,t+0.04);g.gain.exponentialRampToValueAtTime(0.001,t+0.35);o.connect(g);g.connect(G4_AC.destination);o.start(t);o.stop(t+0.38);});}catch(e){}}
+
+// Particles — drawn on g4sp canvas (own loop, safe because game4 has no rAF loop conflict)
+function g4_getCC(el){const er=el.getBoundingClientRect();const rr=document.getElementById('g4-root').getBoundingClientRect();return{x:er.left-rr.left+er.width/2,y:er.top-rr.top+er.height/2};}
+function g4_spawnFlip(el){const{x,y}=g4_getCC(el);const cc='#c8ff00';for(let i=0;i<8;i++){const a=Math.random()*Math.PI*2,sp=1.5+Math.random()*3.5;g4_parts.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.055+Math.random()*0.04,s:1.5+Math.random()*2.5,c:cc});}}
+function g4_spawnMatchBurst(e1,e2){[e1,e2].forEach(el=>{const{x,y}=g4_getCC(el);const cc='#c8ff00',c2='#ffea00';g4_parts.push({type:'flash',x,y,r:8,life:1,dc:0.11,c:cc});g4_parts.push({type:'ring',x,y,r:5,mr:70,life:1,dc:0.055,c:cc,lw:2.5});for(let i=0;i<28;i++){const a=Math.random()*Math.PI*2,sp=2+Math.random()*7;g4_parts.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.028+Math.random()*0.025,s:1.5+Math.random()*3.5,c:Math.random()>.5?cc:c2});}for(let i=0;i<8;i++){const a=(i/8)*Math.PI*2,sp=4+Math.random()*5;g4_parts.push({type:'star',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.026,s:3+Math.random()*3,c:'#fff'});}});}
+function g4_spawnWrongBurst(el){const{x,y}=g4_getCC(el);const cc='#ff2222',c2='#ff7744';g4_parts.push({type:'flash',x,y,r:6,life:1,dc:0.1,c:cc});for(let i=0;i<12;i++){const a=Math.random()*Math.PI*2,sp=1.5+Math.random()*4;g4_parts.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.05+Math.random()*0.03,s:1+Math.random()*2,c:Math.random()>.5?cc:c2});}}
+function g4_spawnCenterBurst(){const rr=document.getElementById('g4-root').getBoundingClientRect();const x=rr.width/2,y=rr.height*0.42;const cc='#c8ff00',c2='#ffea00';g4_parts.push({type:'flash',x,y,r:20,life:1,dc:0.07,c:cc});for(let i=0;i<3;i++)g4_parts.push({type:'ring',x,y,r:5+i*10,mr:100+i*22,life:1,dc:0.04+i*0.01,c:i%2===0?cc:c2,lw:2.5});for(let i=0;i<55;i++){const a=Math.random()*Math.PI*2,sp=3+Math.random()*10;g4_parts.push({type:'spark',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.02+Math.random()*0.022,s:1.5+Math.random()*4,c:Math.random()>.5?cc:c2});}for(let i=0;i<14;i++){const a=(i/14)*Math.PI*2,sp=6+Math.random()*8;g4_parts.push({type:'star',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,dc:0.022,s:4+Math.random()*5,c:'#fff'});}}
+
+function g4_drawParts(){
+  if(!g4_sctx){g4_afr=requestAnimationFrame(g4_drawParts);return;}
+  g4_spcv.width=g4_spcv.offsetWidth||window.innerWidth;
+  g4_spcv.height=g4_spcv.offsetHeight||window.innerHeight;
+  g4_sctx.clearRect(0,0,g4_spcv.width,g4_spcv.height);
+  g4_parts.forEach(p=>{
+    g4_sctx.save();g4_sctx.globalAlpha=Math.max(0,p.life);
+    if(p.type==='flash'){const gr=g4_sctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);gr.addColorStop(0,p.c+'bb');gr.addColorStop(0.35,p.c+'33');gr.addColorStop(1,p.c+'00');g4_sctx.fillStyle=gr;g4_sctx.beginPath();g4_sctx.arc(p.x,p.y,p.r*5,0,Math.PI*2);g4_sctx.fill();p.r+=7;p.life-=p.dc;}
+    else if(p.type==='ring'){g4_sctx.strokeStyle=p.c;g4_sctx.lineWidth=p.lw;g4_sctx.shadowBlur=18;g4_sctx.shadowColor=p.c;g4_sctx.beginPath();g4_sctx.arc(p.x,p.y,p.r,0,Math.PI*2);g4_sctx.stroke();p.r+=(p.mr-p.r)*0.2;p.life-=p.dc;}
+    else if(p.type==='star'){g4_sctx.fillStyle='#fff';g4_sctx.shadowBlur=10;g4_sctx.shadowColor=p.c;const s=p.s*p.life;g4_sctx.beginPath();for(let k=0;k<8;k++){const a=(k/8)*Math.PI*2,r=k%2===0?s:s*0.38;k===0?g4_sctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r):g4_sctx.lineTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);}g4_sctx.closePath();g4_sctx.fill();p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.vx*=0.93;p.life-=p.dc;}
+    else{g4_sctx.strokeStyle=p.c;g4_sctx.lineWidth=2.2;g4_sctx.shadowBlur=22;g4_sctx.shadowColor=p.c;g4_sctx.beginPath();g4_sctx.moveTo(p.x,p.y);g4_sctx.lineTo(p.x+p.vx*6,p.y+p.vy*6);g4_sctx.stroke();g4_sctx.fillStyle=p.c;g4_sctx.beginPath();g4_sctx.arc(p.x,p.y,p.s*p.life*0.75,0,Math.PI*2);g4_sctx.fill();p.x+=p.vx;p.y+=p.vy;p.vy+=0.1;p.vx*=0.93;p.life-=p.dc;}
+    g4_sctx.restore();
+  });
+  g4_parts=g4_parts.filter(p=>p.life>0);
+  g4_afr=requestAnimationFrame(g4_drawParts);
+}
+// =====================================================================
+// END GAME 4 — MEMORY MATCH
+// =====================================================================
+</script>
+</body>
+</html>
