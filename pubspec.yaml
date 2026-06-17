@@ -11,13 +11,6 @@ dependencies:
     sdk: flutter
   flutter_inappwebview: ^6.0.0
 
-  dev_dependencies:
-  flutter_launcher_icons: ^0.13.1
-
-flutter_launcher_icons:
-  android: true
-  image_path: "assets/CalcMindLogo.png"
-
 flutter:
   uses-material-design: true
   assets:
