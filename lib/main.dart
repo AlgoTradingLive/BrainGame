@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
+// ===================== AdMob IDs =====================
+// App ID goes in android/app/src/main/AndroidManifest.xml (meta-data), NOT here.
+const String kInterstitialAdUnitId = 'ca-app-pub-6724873553204610/7301847467';
+const String kBannerAdUnitId = 'ca-app-pub-6724873553204610/5949272732';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   runApp(const MyApp());
 }
 
@@ -25,17 +33,151 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  InAppWebViewController? _webViewController;
+
+  // ---- Interstitial ----
+  InterstitialAd? _interstitialAd;
+  bool _interstitialReady = false;
+
+  // ---- Banner (always visible, independent of the ads toggle) ----
+  BannerAd? _bannerAd;
+  bool _bannerReady = false;
+
+  // Mirrors the HTML "Ads ON/OFF" toggle. Only gates the INTERSTITIAL —
+  // the banner keeps showing no matter what this is set to.
+  bool _adsEnabled = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBannerAd();
+    _loadInterstitialAd();
+  }
+
+  @override
+  void dispose() {
+    _interstitialAd?.dispose();
+    _bannerAd?.dispose();
+    super.dispose();
+  }
+
+  // ===================== Banner =====================
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: kBannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          if (mounted) setState(() => _bannerReady = true);
+        },
+        onAdFailedToLoad: (ad, error) {
+          ad.dispose();
+          if (mounted) setState(() => _bannerReady = false);
+        },
+      ),
+    )..load();
+  }
+
+  // ===================== Interstitial =====================
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: kInterstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          _interstitialReady = true;
+          _interstitialAd!.fullScreenContentCallback =
+              FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _interstitialReady = false;
+              _loadInterstitialAd(); // preload the next one
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _interstitialReady = false;
+              _loadInterstitialAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          _interstitialReady = false;
+          // Retry later instead of hammering AdMob with requests.
+          Future.delayed(const Duration(seconds: 30), _loadInterstitialAd);
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialIfReady() {
+    if (!_adsEnabled) return; // toggle OFF -> no interstitial
+    if (_interstitialReady && _interstitialAd != null) {
+      _interstitialAd!.show();
+    }
+  }
+
+  // ===================== Bridge from HTML/JS =====================
+  // Corresponds to BrainGame.html's sendToKodular(val), which calls:
+  //   window.flutter_inappwebview.callHandler('adBridge', val)
+  void _handleWebMessage(String value) {
+    switch (value) {
+      case 'SHOW_INTERSTITIAL_AD':
+        _showInterstitialIfReady();
+        break;
+      case 'SHOW_REWARDED_AD':
+        // No Rewarded ad unit has been created in AdMob yet.
+        // Create one, then wire up RewardedAd.load/show here.
+        break;
+      case 'ADS_ENABLED':
+        _adsEnabled = true;
+        break;
+      case 'ADS_DISABLED':
+        _adsEnabled = false;
+        break;
+      default:
+        // LEVEL_COMPLETE, clap, boo, COINS_UPDATE|... — no native action needed.
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: InAppWebView(
-          initialFile: 'assets/BrainGame.html',
-          initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            supportZoom: false,
-            transparentBackground: true,
-          ),
+        child: Column(
+          children: [
+            Expanded(
+              child: InAppWebView(
+                initialFile: 'assets/BrainGame.html',
+                initialSettings: InAppWebViewSettings(
+                  javaScriptEnabled: true,
+                  supportZoom: false,
+                  transparentBackground: true,
+                ),
+                onWebViewCreated: (controller) {
+                  _webViewController = controller;
+                  controller.addJavaScriptHandler(
+                    handlerName: 'adBridge',
+                    callback: (args) {
+                      if (args.isNotEmpty) {
+                        _handleWebMessage(args.first.toString());
+                      }
+                      return null;
+                    },
+                  );
+                },
+              ),
+            ),
+            // Banner ad strip — always visible, unaffected by the ads toggle.
+            if (_bannerReady && _bannerAd != null)
+              SizedBox(
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+          ],
         ),
       ),
     );
