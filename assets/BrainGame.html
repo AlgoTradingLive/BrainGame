@@ -1312,13 +1312,29 @@ function watchVideoAd() {
     if (Coins.d.adsToday >= DAILY_AD_MAX) { showToast('📵 Max 10 videos/day!','#f23645'); return; }
     if (Coins.d.today >= DAILY_LIMIT) { showDailyLimit(); return; }
     sendToKodular('SHOW_REWARDED_AD');
+    showInterstitialAd();
     showToast('⏳ Loading video...','#6b7280');
     _adCooldown = true;
     setTimeout(()=>{ _adCooldown=false; }, 3000);
 }
 
 function sendToKodular(val) {
-    if (window.AppInventor) window.AppInventor.setWebViewString(val);
+    // Bridge to Flutter (flutter_inappwebview). Native Dart side listens
+    // via controller.addJavaScriptHandler(handlerName: 'adBridge', ...)
+    if (window.flutter_inappwebview) {
+        window.flutter_inappwebview.callHandler('adBridge', val);
+    }
+}
+
+// ── Interstitial Ad (AdMob via Kodular) ──────────────────────────
+// Trigger points: (1) every time ANY game's level is completed,
+// (2) when the "Get 50 Coin" video button is tapped.
+// IMPORTANT: Banner ad is controlled natively in Kodular and is
+// NOT affected by this toggle. Only the interstitial is skipped
+// when the Ads ON/OFF switch on the home screen is OFF.
+function showInterstitialAd() {
+    if (!window._adsEnabled) return; // Ads toggle OFF -> no interstitial
+    sendToKodular('SHOW_INTERSTITIAL_AD');
 }
 
 // ===================== AUDIO ENGINE =====================
@@ -1695,6 +1711,7 @@ function g1_check(btn) {
 
 function g1_showVictory() {
     sendToKodular('LEVEL_COMPLETE');
+    showInterstitialAd();
     document.getElementById('game-ui').style.display = 'none';
     document.getElementById('victory-screen').style.display = 'flex';
     document.getElementById('marks-val-txt').innerText = g1.marks;
@@ -1989,7 +2006,7 @@ function g2_update() {
                 Coins.add(COIN_SNAKE_CORRECT, 'Snake! 🐍');
                 g2_spawnBurst(opt.x, opt.y, true);
                 g2.gameActive=false;
-                setTimeout(()=>{if(g2.score>0&&g2.score%100===0){sendToKodular('LEVEL_COMPLETE');document.getElementById('level-modal').style.display='flex';}else{g2.gameActive=true;g2_generateQuestion();}},600);
+                setTimeout(()=>{if(g2.score>0&&g2.score%100===0){sendToKodular('LEVEL_COMPLETE');showInterstitialAd();document.getElementById('level-modal').style.display='flex';}else{g2.gameActive=true;g2_generateQuestion();}},600);
             } else {
                 opt.state='wrong'; g2_playSound('WRONG'); g2.lives--;
                 document.getElementById('g2-life-txt').innerText=g2.lives;
@@ -2340,6 +2357,7 @@ function g3_wordComplete(){
 function g3_endGame(){
   clearInterval(g3_timerInt);
   sendToKodular('LEVEL_COMPLETE');
+  showInterstitialAd();
   // 🪙 1 coin reward per level completed
   const coinsEarned = Coins.add(1, 'Emoji Spelling Level! 🔤');
   const ov=document.getElementById('g3-ov');
@@ -2591,7 +2609,7 @@ function g4_flip(i){
 
 function g4_showWin(timedOut){
   g4_active=false;
-  if(!timedOut) sendToKodular('LEVEL_COMPLETE');
+  if(!timedOut) { sendToKodular('LEVEL_COMPLETE'); showInterstitialAd(); }
   const lvl=G4_LEVELS[g4_lvlIdx];
   const par=lvl.pairs+2;
   const base=lvl.pairs*100;
