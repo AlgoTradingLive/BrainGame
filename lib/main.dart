@@ -6,6 +6,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 // App ID goes in android/app/src/main/AndroidManifest.xml (meta-data), NOT here.
 const String kInterstitialAdUnitId = 'ca-app-pub-6724873553204610/7301847467';
 const String kBannerAdUnitId = 'ca-app-pub-6724873553204610/5949272732';
+const String kRewardedAdUnitId = 'ca-app-pub-6724873553204610/6943658774';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,10 @@ class _GameScreenState extends State<GameScreen> {
   BannerAd? _bannerAd;
   bool _bannerReady = false;
 
+  // ---- Rewarded (video watched -> coins in the HTML/JS side) ----
+  RewardedAd? _rewardedAd;
+  bool _rewardedReady = false;
+
   // Mirrors the HTML "Ads ON/OFF" toggle. Only gates the INTERSTITIAL —
   // the banner keeps showing no matter what this is set to.
   bool _adsEnabled = true;
@@ -52,12 +57,14 @@ class _GameScreenState extends State<GameScreen> {
     super.initState();
     _loadBannerAd();
     _loadInterstitialAd();
+    _loadRewardedAd();
   }
 
   @override
   void dispose() {
     _interstitialAd?.dispose();
     _bannerAd?.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -118,8 +125,56 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  // ===================== Rewarded =====================
+  void _loadRewardedAd() {
+    RewardedAd.load(
+      adUnitId: kRewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          _rewardedAd = ad;
+          _rewardedReady = true;
+          _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _rewardedReady = false;
+              _loadRewardedAd(); // preload the next one
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _rewardedReady = false;
+              _loadRewardedAd();
+            },
+          );
+        },
+        onAdFailedToLoad: (error) {
+          _rewardedReady = false;
+          // Retry later instead of hammering AdMob with requests.
+          Future.delayed(const Duration(seconds: 30), _loadRewardedAd);
+        },
+      ),
+    );
+  }
+
+  void _showRewardedIfReady() {
+    if (!_adsEnabled) return; // toggle OFF -> no rewarded ad either
+    if (_rewardedReady && _rewardedAd != null) {
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          // User watched the full video -> tell the HTML/JS side to
+          // credit coins by calling onAdComplete() defined in BrainGame.html
+          _webViewController?.evaluateJavascript(source: 'onAdComplete()');
+        },
+      );
+    } else {
+      // Ad not ready yet (still loading) -> try to fetch a fresh one
+      // for next time, and let the HTML side show its own "loading" toast.
+      _loadRewardedAd();
+    }
+  }
+
   // ===================== Bridge from HTML/JS =====================
-  // Corresponds to BrainGame.html's sendToKodular(val), which calls:
+  // Corresponds to BrainGame.html's sendToFlutter(val), which calls:
   //   window.flutter_inappwebview.callHandler('adBridge', val)
   void _handleWebMessage(String value) {
     switch (value) {
@@ -127,8 +182,7 @@ class _GameScreenState extends State<GameScreen> {
         _showInterstitialIfReady();
         break;
       case 'SHOW_REWARDED_AD':
-        // No Rewarded ad unit has been created in AdMob yet.
-        // Create one, then wire up RewardedAd.load/show here.
+        _showRewardedIfReady();
         break;
       case 'ADS_ENABLED':
         _adsEnabled = true;
