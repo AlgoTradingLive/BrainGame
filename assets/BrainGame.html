@@ -1063,7 +1063,7 @@ const Coins = {
         this.d.today += actual;
         this.save(); this.refreshUI();
         if (msg) showToast(`🪙 +${actual} ${msg}`);
-        sendToKodular(`COINS_UPDATE|${this.d.total}|${this.d.today}`);
+        sendToFlutter(`COINS_UPDATE|${this.d.total}|${this.d.today}`);
         if (this.d.today >= DAILY_LIMIT) showDailyLimit();
         return actual;
     },
@@ -1072,7 +1072,7 @@ const Coins = {
     _forceAdd(amt) {
         if (!window._adsEnabled) return;  // Ads OFF = no daily bonus
         this.d.total += amt; this.save(); this.refreshUI();
-        sendToKodular(`COINS_UPDATE|${this.d.total}|${this.d.today}`);
+        sendToFlutter(`COINS_UPDATE|${this.d.total}|${this.d.today}`);
     },
 
     refreshUI() {
@@ -1146,15 +1146,15 @@ function watchVideoAd_OLD_REMOVED() {
     if (_adCooldown) { showToast('⏳ Please wait...','#6b7280'); return; }
     if (Coins.d.adsToday >= DAILY_AD_MAX) { showToast('📵 Max 10 videos/day!','#f23645'); return; }
     if (Coins.d.today >= DAILY_LIMIT) { showDailyLimit(); return; }
-    // Signal Kodular to show rewarded ad
-    // When ad completes, Kodular calls: AppInventor.setWebViewString("AD_COMPLETE")
-    // Which triggers onAdComplete() below
-    sendToKodular('SHOW_REWARDED_AD');
+    // Signal Flutter (native) side to show rewarded ad.
+    // When ad completes, the Flutter side should call the JS function
+    // onAdComplete() in this WebView (e.g. via controller.evaluateJavascript)
+    sendToFlutter('SHOW_REWARDED_AD');
     showToast('⏳ Loading video...','#6b7280');
     _adCooldown = true;
     setTimeout(()=>{ _adCooldown=false; }, 3000);
 }
-// Called from Kodular after rewarded ad fully watched
+// Called from the Flutter (native) side after rewarded ad fully watched
 function onAdComplete() {
     Coins.d.adsToday++;
     Coins.save();
@@ -1191,6 +1191,10 @@ function _checkDailyBlock() {
     // Initialize coins system on app start
     Coins.load();
     _updateAdsToggleUI();
+    // Tell native (Flutter) side the initial toggle state. Note: this
+    // ONLY affects rewarded/interstitial ads. Banner ad always stays visible
+    // and is not linked to this toggle at all.
+    sendToFlutter(window._adsEnabled ? "ADS_ENABLED" : "ADS_DISABLED");
 
     const container = document.getElementById('particles');
     const colors = ['#00f3ff', '#a855f7', '#39ff14', '#f0b90b'];
@@ -1298,7 +1302,7 @@ function toggleAdsFromHome() {
     _updateAdsToggleUI();
     const btn = document.getElementById("watch-ad-btn");
     if (btn) btn.style.display = window._adsEnabled ? "flex" : "none";
-    sendToKodular(window._adsEnabled ? "ADS_ENABLED" : "ADS_DISABLED");
+    sendToFlutter(window._adsEnabled ? "ADS_ENABLED" : "ADS_DISABLED");
     if (!window._adsEnabled) {
         showToast("Ads OFF - Enjoy ad-free gaming! 🎮", "#6b7280");
     } else {
@@ -1311,14 +1315,14 @@ function watchVideoAd() {
     if (_adCooldown) { showToast('⏳ Please wait...','#6b7280'); return; }
     if (Coins.d.adsToday >= DAILY_AD_MAX) { showToast('📵 Max 10 videos/day!','#f23645'); return; }
     if (Coins.d.today >= DAILY_LIMIT) { showDailyLimit(); return; }
-    sendToKodular('SHOW_REWARDED_AD');
+    sendToFlutter('SHOW_REWARDED_AD');
     showInterstitialAd();
     showToast('⏳ Loading video...','#6b7280');
     _adCooldown = true;
     setTimeout(()=>{ _adCooldown=false; }, 3000);
 }
 
-function sendToKodular(val) {
+function sendToFlutter(val) {
     // Bridge to Flutter (flutter_inappwebview). Native Dart side listens
     // via controller.addJavaScriptHandler(handlerName: 'adBridge', ...)
     if (window.flutter_inappwebview) {
@@ -1326,15 +1330,16 @@ function sendToKodular(val) {
     }
 }
 
-// ── Interstitial Ad (AdMob via Kodular) ──────────────────────────
+// ── Interstitial Ad (AdMob via Flutter native side) ──────────────
 // Trigger points: (1) every time ANY game's level is completed,
 // (2) when the "Get 50 Coin" video button is tapped.
-// IMPORTANT: Banner ad is controlled natively in Kodular and is
-// NOT affected by this toggle. Only the interstitial is skipped
-// when the Ads ON/OFF switch on the home screen is OFF.
+// IMPORTANT: Banner ad is controlled natively on the Flutter side and
+// should ALWAYS stay visible, regardless of this toggle. Only the
+// interstitial (and rewarded video) ad is skipped when the Ads
+// ON/OFF switch on the home screen is OFF.
 function showInterstitialAd() {
     if (!window._adsEnabled) return; // Ads toggle OFF -> no interstitial
-    sendToKodular('SHOW_INTERSTITIAL_AD');
+    sendToFlutter('SHOW_INTERSTITIAL_AD');
 }
 
 // ===================== AUDIO ENGINE =====================
@@ -1602,7 +1607,7 @@ function g1_selectMode(m) {
     g1.mode = m; g1.isMemoryActive = false;
     g1.speed = m==='easy' ? 0.6 : (m==='normal' ? 0.65 : 0.7);
     document.getElementById('menu').style.display = 'none';
-    sendToKodular("bg_start");
+    sendToFlutter("bg_start");
     AudioEngine.startG1Music();
     g1_showInfo();
 }
@@ -1699,18 +1704,18 @@ function g1_check(btn) {
     let isCorrect = (g1.operator==='+'&&val+g1.falling===g1.target)||(g1.operator==='-'&&g1.falling-val===g1.target)||(g1.operator==='*'&&g1.falling*val===g1.target)||(g1.operator==='/'&&g1.falling/val===g1.target);
     if(isCorrect) {
         g1.marks+=10; g1.qCount++; btn.classList.add('correct-neon');
-        AudioEngine.g1_correct(); sendToKodular("clap");
+        AudioEngine.g1_correct(); sendToFlutter("clap");
         Coins.add(COIN_MATH_CORRECT, 'Correct! ✅');
         if(g1.qCount>=5) { g1.level++; g1.qCount=0; setTimeout(g1_showVictory,1000); } else { setTimeout(g1_nextQ,1000); }
     } else {
         g1.marks-=5; btn.classList.add('wrong-neon');
-        AudioEngine.g1_wrong(); sendToKodular("boo"); setTimeout(g1_nextQ,1000);
+        AudioEngine.g1_wrong(); sendToFlutter("boo"); setTimeout(g1_nextQ,1000);
     }
     document.getElementById('marks-txt').innerText = g1.marks;
 }
 
 function g1_showVictory() {
-    sendToKodular('LEVEL_COMPLETE');
+    sendToFlutter('LEVEL_COMPLETE');
     showInterstitialAd();
     document.getElementById('game-ui').style.display = 'none';
     document.getElementById('victory-screen').style.display = 'flex';
@@ -1728,7 +1733,7 @@ function g1_update() {
         document.getElementById('pot-container').style.top = g1.y+"px";
         document.getElementById('water-level').style.top = (100-(g1.timer/1.5))+"%";
         document.getElementById('timer-box').innerText = Math.ceil(g1.timer/10)+"s";
-        if(g1.timer<=0||g1.y>window.innerHeight*0.65) { g1.marks-=2; AudioEngine.g1_timeout(); sendToKodular("boo"); g1_nextQ(); }
+        if(g1.timer<=0||g1.y>window.innerHeight*0.65) { g1.marks-=2; AudioEngine.g1_timeout(); sendToFlutter("boo"); g1_nextQ(); }
     }
     requestAnimationFrame(g1_update);
 }
@@ -1772,8 +1777,8 @@ function g1_showRecallOptions() {
         btn.onclick=()=>{
             document.getElementById('actual-word').innerText=g1.currentWord;
             document.getElementById('correct-reveal').style.display='block';
-            if(opt===g1.currentWord){ g1.marks+=10; btn.classList.add('correct-neon'); AudioEngine.mem_correct(); sendToKodular("clap"); Coins.add(COIN_MEMORY_CORRECT, 'Memory! 🧠'); }
-            else { g1.marks-=5; btn.classList.add('wrong-neon'); AudioEngine.mem_wrong(); sendToKodular("boo"); }
+            if(opt===g1.currentWord){ g1.marks+=10; btn.classList.add('correct-neon'); AudioEngine.mem_correct(); sendToFlutter("clap"); Coins.add(COIN_MEMORY_CORRECT, 'Memory! 🧠'); }
+            else { g1.marks-=5; btn.classList.add('wrong-neon'); AudioEngine.mem_wrong(); sendToFlutter("boo"); }
             document.getElementById('mem-marks-txt').innerText=g1.marks;
             setTimeout(()=>{ g1.memSet++; if(g1.memSet>5){g1.memLevel++;g1.memSet=1;g1_showVictory();}else{g1_generateMemorySet();} },1800);
         };
@@ -2006,7 +2011,7 @@ function g2_update() {
                 Coins.add(COIN_SNAKE_CORRECT, 'Snake! 🐍');
                 g2_spawnBurst(opt.x, opt.y, true);
                 g2.gameActive=false;
-                setTimeout(()=>{if(g2.score>0&&g2.score%100===0){sendToKodular('LEVEL_COMPLETE');showInterstitialAd();document.getElementById('level-modal').style.display='flex';}else{g2.gameActive=true;g2_generateQuestion();}},600);
+                setTimeout(()=>{if(g2.score>0&&g2.score%100===0){sendToFlutter('LEVEL_COMPLETE');showInterstitialAd();document.getElementById('level-modal').style.display='flex';}else{g2.gameActive=true;g2_generateQuestion();}},600);
             } else {
                 opt.state='wrong'; g2_playSound('WRONG'); g2.lives--;
                 document.getElementById('g2-life-txt').innerText=g2.lives;
@@ -2356,7 +2361,7 @@ function g3_wordComplete(){
 
 function g3_endGame(){
   clearInterval(g3_timerInt);
-  sendToKodular('LEVEL_COMPLETE');
+  sendToFlutter('LEVEL_COMPLETE');
   showInterstitialAd();
   // 🪙 1 coin reward per level completed
   const coinsEarned = Coins.add(1, 'Emoji Spelling Level! 🔤');
@@ -2609,7 +2614,7 @@ function g4_flip(i){
 
 function g4_showWin(timedOut){
   g4_active=false;
-  if(!timedOut) { sendToKodular('LEVEL_COMPLETE'); showInterstitialAd(); }
+  if(!timedOut) { sendToFlutter('LEVEL_COMPLETE'); showInterstitialAd(); }
   const lvl=G4_LEVELS[g4_lvlIdx];
   const par=lvl.pairs+2;
   const base=lvl.pairs*100;
