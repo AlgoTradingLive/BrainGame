@@ -169,7 +169,7 @@
         .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; background: var(--bg); text-align: center; padding: 20px; }
         .header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-around; padding: 10px 5px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); z-index: 100; }
         .stat-capsule { background: rgba(255,255,255,0.05); border: 1.5px solid var(--neon-blue); padding: 6px 13px; border-radius: 50px; font-weight: bold; font-size: 13px; color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2); }
-        #pot-container { position: absolute; width: 110px; height: 130px; left: 50%; transform: translateX(-50%); z-index: 10; }
+        #pot-container { position: absolute; top: 0; width: 110px; height: 130px; left: 50%; transform: translateX(-50%); z-index: 10; }
         #glass-pot { width: 100%; height: 100%; position: relative; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 10px 10px 40px 40px; overflow: hidden; backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; font-size: 38px; font-weight: bold; }
         .water-wave { position: absolute; bottom: 0; width: 220%; height: 100%; background: rgba(0, 243, 255, 0.5); border-radius: 42%; animation: wave-flow 5s infinite linear; left: -60%; transition: top 0.3s linear; }
         @keyframes wave-flow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -1726,11 +1726,18 @@ function g1_showVictory() {
     else { nextBtn.onclick=()=>g1_showInfo(); }
 }
 
-function g1_update() {
-    if(document.getElementById('game1-container').style.display==='none') return;
+let g1_lastTs = 0;
+function g1_update(ts) {
+    if(document.getElementById('game1-container').style.display==='none') { g1_lastTs = 0; requestAnimationFrame(g1_update); return; }
+    if(!ts) ts = performance.now();
+    if(!g1_lastTs) g1_lastTs = ts;
+    // dt normalized so dt=1 means "one frame at 60fps" — old speed values stay valid on any device
+    let dt = (ts - g1_lastTs) / (1000/60);
+    if(dt>3) dt=3; // avoid big jumps after lag spikes / tab switches
+    g1_lastTs = ts;
     if(!g1.isPaused && document.getElementById('game-ui').style.display==='block') {
-        g1.y+=g1.speed; g1.timer-=(g1.speed/4.5);
-        document.getElementById('pot-container').style.top = g1.y+"px";
+        g1.y+=g1.speed*dt; g1.timer-=(g1.speed/4.5)*dt;
+        document.getElementById('pot-container').style.transform = `translateX(-50%) translateY(${g1.y}px)`;
         document.getElementById('water-level').style.top = (100-(g1.timer/1.5))+"%";
         document.getElementById('timer-box').innerText = Math.ceil(g1.timer/10)+"s";
         if(g1.timer<=0||g1.y>window.innerHeight*0.65) { g1.marks-=2; AudioEngine.g1_timeout(); sendToFlutter("boo"); g1_nextQ(); }
@@ -1940,18 +1947,22 @@ function g2_playSound(type) {
 
 // ── Snake Spark / Burst System ──────────────────────────────────────
 let g2_sparkParts = [];
+// Rough low-end device detection — shadowBlur/gradients are very costly on cheap Android GPUs
+const G2_LOW_END = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+                    (navigator.deviceMemory && navigator.deviceMemory <= 3);
 
 function g2_spawnBurst(x, y, ok) {
     const cc = ok ? '#39ff14' : '#ff3131';
     const c2 = ok ? '#00f3ff' : '#ff9f00';
     g2_sparkParts.push({type:'flash', x, y, r:10, life:1, dc:0.09, c:cc});
-    for(let i=0;i<2;i++) g2_sparkParts.push({type:'ring', x, y, r:8+i*12, mr:80+i*30, life:1, dc:0.05+i*0.01, c:i%2===0?cc:c2, lw:2.5});
-    const cnt = ok ? 28 : 14;
+    const ringCount = G2_LOW_END ? 1 : 2;
+    for(let i=0;i<ringCount;i++) g2_sparkParts.push({type:'ring', x, y, r:8+i*12, mr:80+i*30, life:1, dc:0.05+i*0.01, c:i%2===0?cc:c2, lw:2.5});
+    const cnt = (ok ? 28 : 14) * (G2_LOW_END ? 0.4 : 1);
     for(let i=0;i<cnt;i++){
         const a=Math.random()*Math.PI*2, sp=ok?(3+Math.random()*6):(2+Math.random()*4);
         g2_sparkParts.push({type:'spark', x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, dc:0.03+Math.random()*0.02, s:ok?(2+Math.random()*3):(1+Math.random()*2), c:Math.random()>.5?cc:c2});
     }
-    if(ok){
+    if(ok && !G2_LOW_END){
         for(let i=0;i<8;i++){
             const a=(i/8)*Math.PI*2, sp=4+Math.random()*5;
             g2_sparkParts.push({type:'star', x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, dc:0.025, s:3+Math.random()*3, c:'#fff'});
@@ -1968,17 +1979,20 @@ function g2_drawSparks(ctx) {
             ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*5,0,Math.PI*2); ctx.fill();
             p.r+=6; p.life-=p.dc;
         } else if(p.type==='ring'){
-            ctx.strokeStyle=p.c; ctx.lineWidth=p.lw; ctx.shadowBlur=16; ctx.shadowColor=p.c;
+            ctx.strokeStyle=p.c; ctx.lineWidth=p.lw;
+            if(!G2_LOW_END){ ctx.shadowBlur=16; ctx.shadowColor=p.c; }
             ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.stroke();
             p.r+=(p.mr-p.r)*0.18; p.life-=p.dc;
         } else if(p.type==='star'){
-            ctx.fillStyle='#fff'; ctx.shadowBlur=10; ctx.shadowColor=p.c;
+            ctx.fillStyle='#fff';
+            if(!G2_LOW_END){ ctx.shadowBlur=10; ctx.shadowColor=p.c; }
             const s=p.s*p.life; ctx.beginPath();
             for(let k=0;k<8;k++){const a=(k/8)*Math.PI*2,r=k%2===0?s:s*0.38; k===0?ctx.moveTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r):ctx.lineTo(p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);}
             ctx.closePath(); ctx.fill();
             p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.vx*=0.93; p.life-=p.dc;
         } else {
-            ctx.strokeStyle=p.c; ctx.lineWidth=1.8; ctx.shadowBlur=12; ctx.shadowColor=p.c;
+            ctx.strokeStyle=p.c; ctx.lineWidth=1.8;
+            if(!G2_LOW_END){ ctx.shadowBlur=12; ctx.shadowColor=p.c; }
             ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+p.vx*5,p.y+p.vy*5); ctx.stroke();
             ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(p.x,p.y,p.s*p.life*0.6,0,Math.PI*2); ctx.fill();
             p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.vx*=0.93; p.life-=p.dc;
@@ -1989,19 +2003,19 @@ function g2_drawSparks(ctx) {
 }
 // ── End Snake Spark System ───────────────────────────────────────────
 
-function g2_update() {
+function g2_update(dt) {
     if(!g2.gameActive) return;
     let diff=g2.snake.targetAngle-g2.snake.angle;
     while(diff<-Math.PI)diff+=Math.PI*2; while(diff>Math.PI)diff-=Math.PI*2;
-    g2.snake.angle+=diff*g2.snake.turnSpeed;
-    g2.snake.x+=Math.cos(g2.snake.angle)*g2.snake.speed;
-    g2.snake.y+=Math.sin(g2.snake.angle)*g2.snake.speed;
+    g2.snake.angle+=diff*g2.snake.turnSpeed*dt;
+    g2.snake.x+=Math.cos(g2.snake.angle)*g2.snake.speed*dt;
+    g2.snake.y+=Math.sin(g2.snake.angle)*g2.snake.speed*dt;
     if(g2.snake.x<0)g2.snake.x=g2.canvas.width; else if(g2.snake.x>g2.canvas.width)g2.snake.x=0;
     if(g2.snake.y<0)g2.snake.y=g2.canvas.height; else if(g2.snake.y>g2.canvas.height)g2.snake.y=0;
     g2.snake.history.push({x:g2.snake.x,y:g2.snake.y});
     if(g2.snake.history.length>g2.snake.tailLength)g2.snake.history.shift();
     g2.options.forEach(opt=>{
-        opt.x+=opt.vx; opt.y+=opt.vy;
+        opt.x+=opt.vx*dt; opt.y+=opt.vy*dt;
         if(opt.x<30||opt.x>g2.canvas.width-30)opt.vx*=-1;
         if(opt.y<200||opt.y>g2.canvas.height-30)opt.vy*=-1;
         if(Math.hypot(g2.snake.x-opt.x,g2.snake.y-opt.y)<g2.snake.radius+20){
@@ -2023,8 +2037,14 @@ function g2_update() {
     });
 }
 
-function g2_draw() {
-    if(document.getElementById('game2-container').style.display==='none') return;
+let g2_lastTs = 0;
+function g2_draw(ts) {
+    if(document.getElementById('game2-container').style.display==='none') { g2_lastTs = 0; g2_animationId = requestAnimationFrame(g2_draw); return; }
+    if(!ts) ts = performance.now();
+    if(!g2_lastTs) g2_lastTs = ts;
+    let dt = (ts - g2_lastTs) / (1000/60);
+    if(dt>3) dt=3;
+    g2_lastTs = ts;
     const ctx=g2.ctx, canvas=g2.canvas;
     ctx.clearRect(0,0,canvas.width,canvas.height);
     g2.snake.history.forEach((p,i)=>{
@@ -2047,7 +2067,7 @@ function g2_draw() {
         ctx.fillText(opt.val,opt.x,opt.y+8);
     });
     g2_drawSparks(ctx);
-    g2_update();
+    g2_update(dt);
     g2_animationId = requestAnimationFrame(g2_draw);
 }
 
