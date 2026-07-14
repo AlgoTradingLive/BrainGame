@@ -1809,7 +1809,7 @@ function g2_init() {
         snake: {
             x:window.innerWidth/2, y:window.innerHeight/2,
             radius:20, angle:-Math.PI/2, targetAngle:-Math.PI/2,
-            speed:2.3, turnSpeed:0.12, history:[], tailLength:60, color:'#00f3ff'
+            speed:2.3, turnSpeed:0.12, history:[], distAcc:0, tailLength:45, color:'#00f3ff'
         },
         options:[]
     };
@@ -1871,8 +1871,8 @@ function g2_initLevelLogic() {
 
 function g2_advanceLevel() {
     document.getElementById('level-modal').style.display='none';
-    // Tail grows by 15 each level
-    g2.snake.tailLength += 15;
+    // Tail grows by 10 each level
+    g2.snake.tailLength += 10;
     let showPopup=false, title="", desc="";
     if(g2.currentLevel===3){title="SUBTRACTION PHASE";desc="Focus! Numbers are going to decrease.";showPopup=true;}
     else if(g2.currentLevel===6){title="DIVISION PHASE";desc="Calculate the divisor carefully!";showPopup=true;}
@@ -2008,12 +2008,22 @@ function g2_update(dt) {
     let diff=g2.snake.targetAngle-g2.snake.angle;
     while(diff<-Math.PI)diff+=Math.PI*2; while(diff>Math.PI)diff-=Math.PI*2;
     g2.snake.angle+=diff*g2.snake.turnSpeed*dt;
-    g2.snake.x+=Math.cos(g2.snake.angle)*g2.snake.speed*dt;
-    g2.snake.y+=Math.sin(g2.snake.angle)*g2.snake.speed*dt;
+    const moveDist = g2.snake.speed*dt;
+    g2.snake.x+=Math.cos(g2.snake.angle)*moveDist;
+    g2.snake.y+=Math.sin(g2.snake.angle)*moveDist;
     if(g2.snake.x<0)g2.snake.x=g2.canvas.width; else if(g2.snake.x>g2.canvas.width)g2.snake.x=0;
     if(g2.snake.y<0)g2.snake.y=g2.canvas.height; else if(g2.snake.y>g2.canvas.height)g2.snake.y=0;
-    g2.snake.history.push({x:g2.snake.x,y:g2.snake.y});
-    if(g2.snake.history.length>g2.snake.tailLength)g2.snake.history.shift();
+    // Distance-based trail sampling: push a history point every fixed pixel step
+    // (= base speed, ~"one 60fps frame") regardless of actual device FPS/dt,
+    // so the snake's visible length stays the same on every phone.
+    g2.snake.distAcc = (g2.snake.distAcc||0) + moveDist;
+    const step = 2.3; // matches original per-frame speed baseline
+    let guard = 0;
+    while(g2.snake.distAcc>=step && guard<20){
+        g2.snake.history.push({x:g2.snake.x,y:g2.snake.y});
+        g2.snake.distAcc-=step; guard++;
+    }
+    if(g2.snake.history.length>g2.snake.tailLength)g2.snake.history.splice(0,g2.snake.history.length-g2.snake.tailLength);
     g2.options.forEach(opt=>{
         opt.x+=opt.vx*dt; opt.y+=opt.vy*dt;
         if(opt.x<30||opt.x>g2.canvas.width-30)opt.vx*=-1;
