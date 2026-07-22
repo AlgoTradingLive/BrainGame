@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CalcMind</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;700&display=swap');
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #010409; color: white; font-family: 'Poppins', sans-serif; overflow: hidden; height: 100vh; }
 
@@ -337,6 +335,10 @@
         }
         
     </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;700&display=swap"></noscript>
 </head>
 <body>
 
@@ -1218,6 +1220,7 @@ let g2_timerIntervalId = null;
 
 function loadGame(num) {
     if (_checkDailyBlock()) return;
+    _loadGameScript(num); // lazy-load this game's JS the first time it's opened
     document.body.classList.add('in-game'); // Coins bar लपवा
     document.getElementById('home-screen').style.display = 'none';
     document.getElementById('back-btn').style.display = 'block';
@@ -1591,6 +1594,22 @@ const AudioEngine = {
 };
 // =========================================================
 
+// =====================================================================
+// LAZY GAME LOADER — game code compiles only when the game is opened
+// =====================================================================
+const _gameLoaded = { 1:false, 2:false, 3:false, 4:false };
+function _loadGameScript(num) {
+    if (_gameLoaded[num]) return;
+    const src = document.getElementById('game' + num + '-src');
+    if (!src) return;
+    const s = document.createElement('script');
+    s.textContent = src.textContent;
+    document.body.appendChild(s);
+    _gameLoaded[num] = true;
+}
+</script>
+
+<script type="text/plain" id="game1-src">
 // ===================== GAME 1 LOGIC =====================
 let g1 = { marks:0, level:1, qCount:0, mode:'easy', target:0, falling:0, y:-150, speed:0.6, timer:150, isPaused:false, operator:'+', memLevel:1, memSet:1, currentWord:"", isMemoryActive:false, rafId:null };
 
@@ -1793,6 +1812,8 @@ function g1_showRecallOptions() {
     });
 }
 
+</script>
+<script type="text/plain" id="game2-src">
 // ===================== GAME 2 LOGIC =====================
 let g2 = {};
 
@@ -2081,6 +2102,8 @@ function g2_draw(ts) {
     g2_animationId = requestAnimationFrame(g2_draw);
 }
 
+</script>
+<script type="text/plain" id="game3-src">
 // =====================================================================
 // GAME 3 — EMOJI SPELLING  (all functions prefixed g3_)
 // 1 coin reward per level (10 words) completed
@@ -2448,6 +2471,8 @@ function g3_drawParts(){
   g3_parts=g3_parts.filter(p=>p.life>0);
   g3_afr=requestAnimationFrame(g3_drawParts);
 }
+</script>
+<script type="text/plain" id="game4-src">
 // =====================================================================
 // GAME 4 — MEMORY MATCH  (all functions prefixed g4_)
 // 1 coin reward per level completed
