@@ -22,9 +22,9 @@ jobs:
           channel: stable
       - name: Install Android SDK Platform 36
         run: |
-          yes | sdkmanager --licenses || true
-          sdkmanager --update
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          SDKMANAGER=$(find $ANDROID_HOME -name "sdkmanager" | head -n 1)
+          yes | $SDKMANAGER --licenses || true
+          $SDKMANAGER "platforms;android-36" "build-tools;36.0.0"
       - run: flutter pub get
 
       - name: Decode Keystore
