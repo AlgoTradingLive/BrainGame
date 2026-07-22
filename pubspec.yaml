@@ -12,7 +12,20 @@ dependencies:
   flutter_inappwebview: ^6.0.0
   google_mobile_ads: ^5.3.1
 
+dev_dependencies:
+  flutter_native_splash: ^2.4.1
+
+flutter_native_splash:
+  color: "#000000"
+  image: assets/CalcMindLogo.png
+  android_12:
+    color: "#000000"
+    image: assets/CalcMindLogo.png
+  fullscreen: true
+
 flutter:
   uses-material-design: true
   assets:
     - assets/BrainGame.html
+    - assets/CalcMindLogo.png
+    - assets/CalcMindBanner.png
