@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -12,6 +13,17 @@ const String kRewardedAdUnitId = 'ca-app-pub-6724873553204610/6943658774';
 void main() {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Android 16 (API 36) पासून edge-to-edge जबरदस्तीने लागू होतो —
+  // हे explicitly सेट केल्याने layout/rendering वेळेत होतं आणि
+  // black-screen delay कमी होतो.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.black,
+    ),
+  );
 
   MobileAds.instance.initialize();
   runApp(const MyApp());
@@ -66,8 +78,8 @@ class _GameScreenState extends State<GameScreen> {
     _loadRewardedAd();
 
     // Safety net: जर WebView काही कारणाने onLoadStop पर्यंत पोहोचला नाही
-    // तरी ३ सेकंदांनंतर splash आपोआप निघेल.
-    Future.delayed(const Duration(seconds: 3), _removeSplash);
+    // तरी 1.5 सेकंदांनंतर splash आपोआप निघेल.
+    Future.delayed(const Duration(milliseconds: 1500), _removeSplash);
   }
 
   void _removeSplash() {
@@ -216,6 +228,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
           children: [
