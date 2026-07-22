@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 // ===================== AdMob IDs =====================
 // App ID goes in android/app/src/main/AndroidManifest.xml (meta-data), NOT here.
@@ -9,7 +10,9 @@ const String kBannerAdUnitId = 'ca-app-pub-6724873553204610/5949272732';
 const String kRewardedAdUnitId = 'ca-app-pub-6724873553204610/6943658774';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
   MobileAds.instance.initialize();
   runApp(const MyApp());
 }
@@ -52,12 +55,26 @@ class _GameScreenState extends State<GameScreen> {
   // the banner keeps showing no matter what this is set to.
   bool _adsEnabled = true;
 
+  // Splash removal safety net
+  bool _splashRemoved = false;
+
   @override
   void initState() {
     super.initState();
     _loadBannerAd();
     _loadInterstitialAd();
     _loadRewardedAd();
+
+    // Safety net: जर WebView काही कारणाने onLoadStop पर्यंत पोहोचला नाही
+    // तरी ३ सेकंदांनंतर splash आपोआप निघेल.
+    Future.delayed(const Duration(seconds: 3), _removeSplash);
+  }
+
+  void _removeSplash() {
+    if (!_splashRemoved) {
+      _splashRemoved = true;
+      FlutterNativeSplash.remove();
+    }
   }
 
   @override
@@ -221,6 +238,10 @@ class _GameScreenState extends State<GameScreen> {
                       return null;
                     },
                   );
+                },
+                onLoadStop: (controller, url) async {
+                  // BrainGame.html पूर्ण लोड झाल्यावर native splash हटवा.
+                  _removeSplash();
                 },
               ),
             ),
