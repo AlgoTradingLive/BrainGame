@@ -20,17 +20,15 @@ jobs:
         with:
           flutter-version: '3.32.0'
           channel: stable
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install Android SDK Platform 36
         run: |
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          SDKMANAGER=$(find "$ANDROID_HOME" -name "sdkmanager" -type f 2>/dev/null | head -n 1)
-          echo "Found sdkmanager at: $SDKMANAGER"
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found!"
-            exit 1
-          fi
-          yes | "$SDKMANAGER" --licenses || true
-          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager --licenses <<< $'y\ny\ny\ny\ny\ny\ny\ny\ny\ny\ny'
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+          echo "--- Installed packages ---"
+          sdkmanager --list_installed
       - run: flutter pub get
 
       - name: Decode Keystore
